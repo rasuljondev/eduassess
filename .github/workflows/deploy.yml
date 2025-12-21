@@ -1,21 +1,18 @@
-name: Deploy to VPS
+name: Deploy to Production
 
 on:
   push:
     branches:
       - main
       - master
-  workflow_dispatch: # Allow manual trigger
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   deploy:
-    name: Deploy to Production Server
+    name: Deploy to VPS
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -26,4 +23,3 @@ jobs:
           script: |
             cd /var/www/eduassess
             ./deploy.sh main
-
