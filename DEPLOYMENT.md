@@ -90,7 +90,7 @@ sudo apt install -y nginx
 #### Clone the repository
 ```bash
 cd /var/www
-sudo git clone git@github.com:rasuljondev/eduassess.git eduassess
+sudo git clone  eduassess
 cd eduassess
 ```
 
