@@ -16,12 +16,11 @@ jobs:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.2.4
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || '22' }}
+          host: ${{ secrets.SSH_HOST || vars.SSH_HOST }}
+          username: ${{ secrets.SSH_USER || vars.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY || vars.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || vars.SSH_PORT || 22 }}
           timeout: 30s
-          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
           script: |
             cd /var/www/eduassess
             ./deploy.sh main
