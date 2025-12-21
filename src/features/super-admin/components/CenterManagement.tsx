@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '../../../shared/ui/Button';
 import { useAlert } from '../../../shared/ui/AlertProvider';
 import { ImageUploader } from '../../../shared/ui/ImageUploader';
-import type { CreateCenterData, CreateAdminData } from '../../services/CenterService';
+import type { CreateCenterData, CreateAdminData } from '../../../services/CenterService';
 import { X, Save, Edit2, Trash2, Plus, UserPlus } from 'lucide-react';
 
 interface CenterFormProps {

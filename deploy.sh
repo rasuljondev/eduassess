@@ -94,7 +94,7 @@ log "Frontend build completed successfully"
 # Restart Telegram bot with PM2
 if command -v pm2 &> /dev/null; then
     log "Restarting Telegram bot with PM2..."
-    pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js || warning "PM2 restart/start failed (bot might not be running)"
+    pm2 restart ecosystem.config.cjs || pm2 start ecosystem.config.cjs || warning "PM2 restart/start failed (bot might not be running)"
     pm2 save || warning "Failed to save PM2 process list"
 else
     warning "PM2 not found, skipping bot restart"
