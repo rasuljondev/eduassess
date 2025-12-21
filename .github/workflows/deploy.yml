@@ -19,8 +19,9 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
+          port: ${{ secrets.SSH_PORT || '22' }}
           timeout: 30s
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
           script: |
             cd /var/www/eduassess
             ./deploy.sh main
