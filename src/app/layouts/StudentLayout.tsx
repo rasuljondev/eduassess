@@ -34,7 +34,7 @@ export const StudentLayout: React.FC = () => {
         <div className="flex items-center gap-3">
           <GraduationCap className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
           <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
-            Exam Platform
+            EduAssess
           </h1>
         </div>
         <div className="flex items-center gap-4">
