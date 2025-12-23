@@ -39,6 +39,9 @@ export const CenterLandingPage: React.FC = () => {
   const [surname, setSurname] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+
+  // Exam type filter (MUST be declared before any conditional returns)
+  const [selectedType, setSelectedType] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { user, login: authLogin } = useAuthStore();
@@ -276,9 +279,6 @@ export const CenterLandingPage: React.FC = () => {
     'aptis': { icon: '📚', color: 'text-green-500', bgColor: 'bg-green-500' },
     'multi_level': { icon: '📊', color: 'text-purple-500', bgColor: 'bg-purple-500' },
   };
-
-  // State for selected exam type filter
-  const [selectedType, setSelectedType] = useState<string | null>(null);
   
   // Filter exams by selected type
   const filteredExams = selectedType 

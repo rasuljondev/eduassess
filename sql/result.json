@@ -1,0 +1,1466 @@
+[
+    {
+      "complete_schema": {
+        "tables": [
+          {
+            "table_name": "centers",
+            "columns": [
+              {
+                "column_name": "id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": "gen_random_uuid()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "slug",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "name",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "logo_path",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "created_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              }
+            ]
+          },
+          {
+            "table_name": "exam_attempts",
+            "columns": [
+              {
+                "column_name": "id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": "gen_random_uuid()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "exam_request_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "center_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "exam_type",
+                "data_type": "USER-DEFINED",
+                "udt_name": "exam_type",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "test_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "status",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": "'ready'::text",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "started_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "expires_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "submission_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "created_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              }
+            ]
+          },
+          {
+            "table_name": "exam_requests",
+            "columns": [
+              {
+                "column_name": "id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": "gen_random_uuid()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "center_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "exam_type",
+                "data_type": "USER-DEFINED",
+                "udt_name": "exam_type",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "test_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "status",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": "'pending'::text",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "requested_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "reviewed_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "reviewed_by",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              }
+            ]
+          },
+          {
+            "table_name": "global_users",
+            "columns": [
+              {
+                "column_name": "id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": "gen_random_uuid()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "login",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "surname",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "name",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "phone_number",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "telegram_id",
+                "data_type": "bigint",
+                "udt_name": "int8",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "telegram_username",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "auth_user_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "created_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "updated_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              }
+            ]
+          },
+          {
+            "table_name": "notifications",
+            "columns": [
+              {
+                "column_name": "id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": "gen_random_uuid()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "recipient_user_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "type",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "payload",
+                "data_type": "jsonb",
+                "udt_name": "jsonb",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "is_read",
+                "data_type": "boolean",
+                "udt_name": "bool",
+                "is_nullable": "NO",
+                "column_default": "false",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "created_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              }
+            ]
+          },
+          {
+            "table_name": "profiles",
+            "columns": [
+              {
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "role",
+                "data_type": "USER-DEFINED",
+                "udt_name": "role_type",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "center_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "full_name",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "created_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "telegram_id",
+                "data_type": "bigint",
+                "udt_name": "int8",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              }
+            ]
+          },
+          {
+            "table_name": "questions",
+            "columns": [
+              {
+                "column_name": "id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": "gen_random_uuid()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "test_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "question_text",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "expected_answer",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "order_num",
+                "data_type": "integer",
+                "udt_name": "int4",
+                "is_nullable": "NO",
+                "column_default": "0",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "created_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              }
+            ]
+          },
+          {
+            "table_name": "scores",
+            "columns": [
+              {
+                "column_name": "submission_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "center_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "exam",
+                "data_type": "USER-DEFINED",
+                "udt_name": "exam_type",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "auto_score",
+                "data_type": "jsonb",
+                "udt_name": "jsonb",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "manual_score",
+                "data_type": "jsonb",
+                "udt_name": "jsonb",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "final_score",
+                "data_type": "jsonb",
+                "udt_name": "jsonb",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "is_published",
+                "data_type": "boolean",
+                "udt_name": "bool",
+                "is_nullable": "NO",
+                "column_default": "false",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "published_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "updated_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              }
+            ]
+          },
+          {
+            "table_name": "submissions",
+            "columns": [
+              {
+                "column_name": "id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": "gen_random_uuid()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "generated_student_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "center_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "exam",
+                "data_type": "USER-DEFINED",
+                "udt_name": "exam_type",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "student_full_name",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "answers",
+                "data_type": "jsonb",
+                "udt_name": "jsonb",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "created_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "student_login",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "student_exam",
+                "data_type": "USER-DEFINED",
+                "udt_name": "exam_type",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "student_test_name",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "student_created_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "phone_number",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "test_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "is_graded",
+                "data_type": "boolean",
+                "udt_name": "bool",
+                "is_nullable": "NO",
+                "column_default": "false",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "graded_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "graded_by",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              }
+            ]
+          },
+          {
+            "table_name": "tests",
+            "columns": [
+              {
+                "column_name": "id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": "gen_random_uuid()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "center_id",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "name",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "exam_type",
+                "data_type": "USER-DEFINED",
+                "udt_name": "exam_type",
+                "is_nullable": "NO",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "description",
+                "data_type": "text",
+                "udt_name": "text",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "duration_minutes",
+                "data_type": "integer",
+                "udt_name": "int4",
+                "is_nullable": "NO",
+                "column_default": "120",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "udt_name": "uuid",
+                "is_nullable": "YES",
+                "column_default": null,
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "created_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              },
+              {
+                "column_name": "updated_at",
+                "data_type": "timestamp with time zone",
+                "udt_name": "timestamptz",
+                "is_nullable": "NO",
+                "column_default": "now()",
+                "character_maximum_length": null
+              }
+            ]
+          }
+        ],
+        "views": [
+          {
+            "view_name": "active_attempts_summary",
+            "definition": " SELECT c.id AS center_id,\n    c.slug AS center_slug,\n    c.name AS center_name,\n    count(*) FILTER (WHERE (ea.status = 'ready'::text)) AS ready_count,\n    count(*) FILTER (WHERE (ea.status = 'in_progress'::text)) AS in_progress_count,\n    count(*) FILTER (WHERE (ea.status = 'submitted'::text)) AS submitted_count,\n    count(*) FILTER (WHERE (ea.status = 'expired'::text)) AS expired_count\n   FROM (centers c\n     LEFT JOIN exam_attempts ea ON ((ea.center_id = c.id)))\n  WHERE (ea.created_at >= date_trunc('day'::text, (now() - '7 days'::interval)))\n  GROUP BY c.id, c.slug, c.name;"
+          },
+          {
+            "view_name": "exam_requests_summary",
+            "definition": " SELECT c.id AS center_id,\n    c.slug AS center_slug,\n    c.name AS center_name,\n    count(*) FILTER (WHERE (er.status = 'pending'::text)) AS pending_count,\n    count(*) FILTER (WHERE (er.status = 'approved'::text)) AS approved_count,\n    count(*) FILTER (WHERE (er.status = 'rejected'::text)) AS rejected_count,\n    count(*) AS total_requests\n   FROM (centers c\n     LEFT JOIN exam_requests er ON ((er.center_id = c.id)))\n  GROUP BY c.id, c.slug, c.name;"
+          },
+          {
+            "view_name": "user_exam_history",
+            "definition": " SELECT ea.id AS attempt_id,\n    ea.user_id,\n    u.login,\n    u.surname,\n    u.name,\n    c.slug AS center_slug,\n    c.name AS center_name,\n    ea.exam_type,\n    t.name AS test_name,\n    ea.status,\n    ea.started_at,\n    ea.expires_at,\n    ea.created_at,\n    s.id AS submission_id,\n    sc.final_score,\n    sc.is_published\n   FROM (((((exam_attempts ea\n     JOIN global_users u ON ((u.id = ea.user_id)))\n     JOIN centers c ON ((c.id = ea.center_id)))\n     LEFT JOIN tests t ON ((t.id = ea.test_id)))\n     LEFT JOIN submissions s ON ((s.id = ea.submission_id)))\n     LEFT JOIN scores sc ON ((sc.submission_id = s.id)))\n  ORDER BY ea.created_at DESC;"
+          }
+        ],
+        "indexes": [
+          {
+            "table_name": "centers",
+            "index_name": "centers_pkey",
+            "definition": "CREATE UNIQUE INDEX centers_pkey ON public.centers USING btree (id)"
+          },
+          {
+            "table_name": "centers",
+            "index_name": "centers_slug_key",
+            "definition": "CREATE UNIQUE INDEX centers_slug_key ON public.centers USING btree (slug)"
+          },
+          {
+            "table_name": "exam_attempts",
+            "index_name": "exam_attempts_pkey",
+            "definition": "CREATE UNIQUE INDEX exam_attempts_pkey ON public.exam_attempts USING btree (id)"
+          },
+          {
+            "table_name": "exam_attempts",
+            "index_name": "idx_exam_attempts_expires",
+            "definition": "CREATE INDEX idx_exam_attempts_expires ON public.exam_attempts USING btree (expires_at)"
+          },
+          {
+            "table_name": "exam_attempts",
+            "index_name": "idx_exam_attempts_request",
+            "definition": "CREATE INDEX idx_exam_attempts_request ON public.exam_attempts USING btree (exam_request_id)"
+          },
+          {
+            "table_name": "exam_attempts",
+            "index_name": "idx_exam_attempts_status",
+            "definition": "CREATE INDEX idx_exam_attempts_status ON public.exam_attempts USING btree (status)"
+          },
+          {
+            "table_name": "exam_attempts",
+            "index_name": "idx_exam_attempts_user",
+            "definition": "CREATE INDEX idx_exam_attempts_user ON public.exam_attempts USING btree (user_id)"
+          },
+          {
+            "table_name": "exam_requests",
+            "index_name": "exam_requests_pkey",
+            "definition": "CREATE UNIQUE INDEX exam_requests_pkey ON public.exam_requests USING btree (id)"
+          },
+          {
+            "table_name": "exam_requests",
+            "index_name": "idx_exam_requests_center_status",
+            "definition": "CREATE INDEX idx_exam_requests_center_status ON public.exam_requests USING btree (center_id, status)"
+          },
+          {
+            "table_name": "exam_requests",
+            "index_name": "idx_exam_requests_status",
+            "definition": "CREATE INDEX idx_exam_requests_status ON public.exam_requests USING btree (status)"
+          },
+          {
+            "table_name": "exam_requests",
+            "index_name": "idx_exam_requests_user",
+            "definition": "CREATE INDEX idx_exam_requests_user ON public.exam_requests USING btree (user_id)"
+          },
+          {
+            "table_name": "global_users",
+            "index_name": "global_users_auth_user_id_key",
+            "definition": "CREATE UNIQUE INDEX global_users_auth_user_id_key ON public.global_users USING btree (auth_user_id)"
+          },
+          {
+            "table_name": "global_users",
+            "index_name": "global_users_login_key",
+            "definition": "CREATE UNIQUE INDEX global_users_login_key ON public.global_users USING btree (login)"
+          },
+          {
+            "table_name": "global_users",
+            "index_name": "global_users_pkey",
+            "definition": "CREATE UNIQUE INDEX global_users_pkey ON public.global_users USING btree (id)"
+          },
+          {
+            "table_name": "global_users",
+            "index_name": "global_users_telegram_id_key",
+            "definition": "CREATE UNIQUE INDEX global_users_telegram_id_key ON public.global_users USING btree (telegram_id)"
+          },
+          {
+            "table_name": "global_users",
+            "index_name": "idx_global_users_auth",
+            "definition": "CREATE INDEX idx_global_users_auth ON public.global_users USING btree (auth_user_id)"
+          },
+          {
+            "table_name": "global_users",
+            "index_name": "idx_global_users_login",
+            "definition": "CREATE INDEX idx_global_users_login ON public.global_users USING btree (login)"
+          },
+          {
+            "table_name": "global_users",
+            "index_name": "idx_global_users_phone",
+            "definition": "CREATE INDEX idx_global_users_phone ON public.global_users USING btree (phone_number)"
+          },
+          {
+            "table_name": "global_users",
+            "index_name": "idx_global_users_telegram_id",
+            "definition": "CREATE INDEX idx_global_users_telegram_id ON public.global_users USING btree (telegram_id)"
+          },
+          {
+            "table_name": "notifications",
+            "index_name": "idx_notif_recipient",
+            "definition": "CREATE INDEX idx_notif_recipient ON public.notifications USING btree (recipient_user_id, created_at)"
+          },
+          {
+            "table_name": "notifications",
+            "index_name": "notifications_pkey",
+            "definition": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)"
+          },
+          {
+            "table_name": "profiles",
+            "index_name": "idx_profiles_center",
+            "definition": "CREATE INDEX idx_profiles_center ON public.profiles USING btree (center_id)"
+          },
+          {
+            "table_name": "profiles",
+            "index_name": "idx_profiles_telegram_id",
+            "definition": "CREATE INDEX idx_profiles_telegram_id ON public.profiles USING btree (telegram_id)"
+          },
+          {
+            "table_name": "profiles",
+            "index_name": "profiles_pkey",
+            "definition": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (user_id)"
+          },
+          {
+            "table_name": "profiles",
+            "index_name": "profiles_telegram_id_key",
+            "definition": "CREATE UNIQUE INDEX profiles_telegram_id_key ON public.profiles USING btree (telegram_id)"
+          },
+          {
+            "table_name": "questions",
+            "index_name": "idx_questions_test",
+            "definition": "CREATE INDEX idx_questions_test ON public.questions USING btree (test_id, order_num)"
+          },
+          {
+            "table_name": "questions",
+            "index_name": "questions_pkey",
+            "definition": "CREATE UNIQUE INDEX questions_pkey ON public.questions USING btree (id)"
+          },
+          {
+            "table_name": "scores",
+            "index_name": "idx_scores_center",
+            "definition": "CREATE INDEX idx_scores_center ON public.scores USING btree (center_id)"
+          },
+          {
+            "table_name": "scores",
+            "index_name": "idx_scores_user",
+            "definition": "CREATE INDEX idx_scores_user ON public.scores USING btree (user_id)"
+          },
+          {
+            "table_name": "scores",
+            "index_name": "scores_pkey",
+            "definition": "CREATE UNIQUE INDEX scores_pkey ON public.scores USING btree (submission_id)"
+          },
+          {
+            "table_name": "submissions",
+            "index_name": "idx_sub_center",
+            "definition": "CREATE INDEX idx_sub_center ON public.submissions USING btree (center_id)"
+          },
+          {
+            "table_name": "submissions",
+            "index_name": "idx_sub_created_at",
+            "definition": "CREATE INDEX idx_sub_created_at ON public.submissions USING btree (created_at)"
+          },
+          {
+            "table_name": "submissions",
+            "index_name": "idx_submissions_user",
+            "definition": "CREATE INDEX idx_submissions_user ON public.submissions USING btree (user_id)"
+          },
+          {
+            "table_name": "submissions",
+            "index_name": "submissions_pkey",
+            "definition": "CREATE UNIQUE INDEX submissions_pkey ON public.submissions USING btree (id)"
+          },
+          {
+            "table_name": "tests",
+            "index_name": "idx_tests_center",
+            "definition": "CREATE INDEX idx_tests_center ON public.tests USING btree (center_id)"
+          },
+          {
+            "table_name": "tests",
+            "index_name": "idx_tests_exam_type",
+            "definition": "CREATE INDEX idx_tests_exam_type ON public.tests USING btree (exam_type)"
+          },
+          {
+            "table_name": "tests",
+            "index_name": "tests_pkey",
+            "definition": "CREATE UNIQUE INDEX tests_pkey ON public.tests USING btree (id)"
+          }
+        ],
+        "foreign_keys": [
+          {
+            "table_name": "exam_attempts",
+            "constraint_name": "exam_attempts_center_id_fkey",
+            "column_name": "center_id",
+            "foreign_table": "centers",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "exam_attempts",
+            "constraint_name": "exam_attempts_exam_request_id_fkey",
+            "column_name": "exam_request_id",
+            "foreign_table": "exam_requests",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "exam_attempts",
+            "constraint_name": "exam_attempts_submission_id_fkey",
+            "column_name": "submission_id",
+            "foreign_table": "submissions",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "exam_attempts",
+            "constraint_name": "exam_attempts_test_id_fkey",
+            "column_name": "test_id",
+            "foreign_table": "tests",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "exam_attempts",
+            "constraint_name": "exam_attempts_user_id_fkey",
+            "column_name": "user_id",
+            "foreign_table": "global_users",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "exam_requests",
+            "constraint_name": "exam_requests_center_id_fkey",
+            "column_name": "center_id",
+            "foreign_table": "centers",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "exam_requests",
+            "constraint_name": "exam_requests_test_id_fkey",
+            "column_name": "test_id",
+            "foreign_table": "tests",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "exam_requests",
+            "constraint_name": "exam_requests_user_id_fkey",
+            "column_name": "user_id",
+            "foreign_table": "global_users",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "profiles",
+            "constraint_name": "profiles_center_id_fkey",
+            "column_name": "center_id",
+            "foreign_table": "centers",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "questions",
+            "constraint_name": "questions_test_id_fkey",
+            "column_name": "test_id",
+            "foreign_table": "tests",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "scores",
+            "constraint_name": "scores_center_id_fkey",
+            "column_name": "center_id",
+            "foreign_table": "centers",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "scores",
+            "constraint_name": "scores_submission_id_fkey",
+            "column_name": "submission_id",
+            "foreign_table": "submissions",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "scores",
+            "constraint_name": "scores_user_id_fkey",
+            "column_name": "user_id",
+            "foreign_table": "global_users",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "submissions",
+            "constraint_name": "submissions_center_id_fkey",
+            "column_name": "center_id",
+            "foreign_table": "centers",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "submissions",
+            "constraint_name": "submissions_test_id_fkey",
+            "column_name": "test_id",
+            "foreign_table": "tests",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "submissions",
+            "constraint_name": "submissions_user_id_fkey",
+            "column_name": "user_id",
+            "foreign_table": "global_users",
+            "foreign_column": "id"
+          },
+          {
+            "table_name": "tests",
+            "constraint_name": "tests_center_id_fkey",
+            "column_name": "center_id",
+            "foreign_table": "centers",
+            "foreign_column": "id"
+          }
+        ],
+        "rls_policies": [
+          {
+            "table_name": "centers",
+            "policy_name": "centers_public_read",
+            "command": "SELECT",
+            "using_expression": "true",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "centers",
+            "policy_name": "centers_superadmin_write",
+            "command": "ALL",
+            "using_expression": "is_superadmin()",
+            "with_check_expression": "is_superadmin()"
+          },
+          {
+            "table_name": "exam_attempts",
+            "policy_name": "attempts_admin_read",
+            "command": "SELECT",
+            "using_expression": "((EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = exam_attempts.center_id) AND (p.role = 'center_admin'::role_type)))) OR is_superadmin())",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "exam_attempts",
+            "policy_name": "attempts_no_client_write",
+            "command": "ALL",
+            "using_expression": "false",
+            "with_check_expression": "false"
+          },
+          {
+            "table_name": "exam_attempts",
+            "policy_name": "attempts_self_read",
+            "command": "SELECT",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM global_users u\n  WHERE ((u.id = exam_attempts.user_id) AND (u.auth_user_id = auth.uid()))))",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "exam_requests",
+            "policy_name": "requests_admin_read",
+            "command": "SELECT",
+            "using_expression": "((EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = exam_requests.center_id) AND (p.role = 'center_admin'::role_type)))) OR is_superadmin())",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "exam_requests",
+            "policy_name": "requests_admin_update",
+            "command": "UPDATE",
+            "using_expression": "((EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = exam_requests.center_id) AND (p.role = 'center_admin'::role_type)))) OR is_superadmin())",
+            "with_check_expression": "((EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = exam_requests.center_id) AND (p.role = 'center_admin'::role_type)))) OR is_superadmin())"
+          },
+          {
+            "table_name": "exam_requests",
+            "policy_name": "requests_self_read",
+            "command": "SELECT",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM global_users u\n  WHERE ((u.id = exam_requests.user_id) AND (u.auth_user_id = auth.uid()))))",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "exam_requests",
+            "policy_name": "requests_student_insert",
+            "command": "INSERT",
+            "using_expression": null,
+            "with_check_expression": "(EXISTS ( SELECT 1\n   FROM global_users u\n  WHERE ((u.id = exam_requests.user_id) AND (u.auth_user_id = auth.uid()))))"
+          },
+          {
+            "table_name": "global_users",
+            "policy_name": "users_admin_read",
+            "command": "SELECT",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.role = ANY (ARRAY['center_admin'::role_type, 'superadmin'::role_type])))))",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "global_users",
+            "policy_name": "users_no_client_write",
+            "command": "ALL",
+            "using_expression": "false",
+            "with_check_expression": "false"
+          },
+          {
+            "table_name": "global_users",
+            "policy_name": "users_self_read",
+            "command": "SELECT",
+            "using_expression": "(auth_user_id = auth.uid())",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "notifications",
+            "policy_name": "notifications_no_client_delete",
+            "command": "DELETE",
+            "using_expression": "false",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "notifications",
+            "policy_name": "notifications_no_client_insert",
+            "command": "INSERT",
+            "using_expression": null,
+            "with_check_expression": "false"
+          },
+          {
+            "table_name": "notifications",
+            "policy_name": "notifications_recipient_read",
+            "command": "SELECT",
+            "using_expression": "(recipient_user_id = auth.uid())",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "notifications",
+            "policy_name": "notifications_recipient_update",
+            "command": "UPDATE",
+            "using_expression": "(recipient_user_id = auth.uid())",
+            "with_check_expression": "(recipient_user_id = auth.uid())"
+          },
+          {
+            "table_name": "profiles",
+            "policy_name": "profiles_self_or_superadmin_read",
+            "command": "SELECT",
+            "using_expression": "((user_id = auth.uid()) OR is_superadmin())",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "profiles",
+            "policy_name": "profiles_superadmin_write",
+            "command": "ALL",
+            "using_expression": "is_superadmin()",
+            "with_check_expression": "is_superadmin()"
+          },
+          {
+            "table_name": "questions",
+            "policy_name": "questions_student_read",
+            "command": "SELECT",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM (exam_attempts ea\n     JOIN global_users gu ON ((gu.id = ea.user_id)))\n  WHERE ((gu.auth_user_id = auth.uid()) AND (ea.test_id = questions.test_id) AND (ea.status = ANY (ARRAY['ready'::text, 'in_progress'::text])) AND ((ea.expires_at IS NULL) OR (ea.expires_at > now())))))",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "questions",
+            "policy_name": "questions_via_test_access",
+            "command": "ALL",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM (tests t\n     JOIN profiles p ON ((p.center_id = t.center_id)))\n  WHERE ((t.id = questions.test_id) AND (p.user_id = auth.uid()) AND (p.role = 'center_admin'::role_type))))",
+            "with_check_expression": "(EXISTS ( SELECT 1\n   FROM (tests t\n     JOIN profiles p ON ((p.center_id = t.center_id)))\n  WHERE ((t.id = questions.test_id) AND (p.user_id = auth.uid()) AND (p.role = 'center_admin'::role_type))))"
+          },
+          {
+            "table_name": "scores",
+            "policy_name": "scores_center_admin_manage",
+            "command": "ALL",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = scores.center_id) AND (p.role = 'center_admin'::role_type))))",
+            "with_check_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = scores.center_id) AND (p.role = 'center_admin'::role_type))))"
+          },
+          {
+            "table_name": "scores",
+            "policy_name": "scores_student_read_published",
+            "command": "SELECT",
+            "using_expression": "((is_published = true) AND (EXISTS ( SELECT 1\n   FROM (submissions s\n     JOIN global_users gu ON ((gu.id = s.user_id)))\n  WHERE ((s.id = scores.submission_id) AND (gu.auth_user_id = auth.uid())))))",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "scores",
+            "policy_name": "scores_student_read_published_v2",
+            "command": "SELECT",
+            "using_expression": "((is_published = true) AND (EXISTS ( SELECT 1\n   FROM global_users u\n  WHERE ((u.id = scores.user_id) AND (u.auth_user_id = auth.uid())))))",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "scores",
+            "policy_name": "scores_superadmin_read",
+            "command": "SELECT",
+            "using_expression": "is_superadmin()",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "submissions",
+            "policy_name": "submissions_center_admin_read",
+            "command": "SELECT",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = submissions.center_id) AND (p.role = 'center_admin'::role_type))))",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "submissions",
+            "policy_name": "submissions_center_admin_update",
+            "command": "UPDATE",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = submissions.center_id) AND (p.role = 'center_admin'::role_type))))",
+            "with_check_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = submissions.center_id) AND (p.role = 'center_admin'::role_type))))"
+          },
+          {
+            "table_name": "submissions",
+            "policy_name": "submissions_student_insert",
+            "command": "INSERT",
+            "using_expression": null,
+            "with_check_expression": "(EXISTS ( SELECT 1\n   FROM (global_users gu\n     JOIN exam_attempts ea ON ((ea.user_id = gu.id)))\n  WHERE ((gu.auth_user_id = auth.uid()) AND (gu.id = submissions.user_id) AND (ea.center_id = submissions.center_id) AND (ea.test_id = submissions.test_id) AND (ea.status = 'in_progress'::text) AND ((ea.expires_at IS NULL) OR (ea.expires_at > now())) AND (ea.submission_id IS NULL))))"
+          },
+          {
+            "table_name": "submissions",
+            "policy_name": "submissions_student_insert_v2",
+            "command": "INSERT",
+            "using_expression": null,
+            "with_check_expression": "(EXISTS ( SELECT 1\n   FROM global_users u\n  WHERE ((u.id = submissions.user_id) AND (u.auth_user_id = auth.uid()))))"
+          },
+          {
+            "table_name": "submissions",
+            "policy_name": "submissions_student_read",
+            "command": "SELECT",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM global_users gu\n  WHERE ((gu.auth_user_id = auth.uid()) AND (gu.id = submissions.user_id))))",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "submissions",
+            "policy_name": "submissions_student_read_v2",
+            "command": "SELECT",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM global_users u\n  WHERE ((u.id = submissions.user_id) AND (u.auth_user_id = auth.uid()))))",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "submissions",
+            "policy_name": "submissions_superadmin_read",
+            "command": "SELECT",
+            "using_expression": "is_superadmin()",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "tests",
+            "policy_name": "tests_authenticated_read",
+            "command": "SELECT",
+            "using_expression": "(auth.uid() IS NOT NULL)",
+            "with_check_expression": null
+          },
+          {
+            "table_name": "tests",
+            "policy_name": "tests_center_admin_all",
+            "command": "ALL",
+            "using_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = tests.center_id) AND (p.role = 'center_admin'::role_type))))",
+            "with_check_expression": "(EXISTS ( SELECT 1\n   FROM profiles p\n  WHERE ((p.user_id = auth.uid()) AND (p.center_id = tests.center_id) AND (p.role = 'center_admin'::role_type))))"
+          },
+          {
+            "table_name": "tests",
+            "policy_name": "tests_superadmin_read",
+            "command": "SELECT",
+            "using_expression": "is_superadmin()",
+            "with_check_expression": null
+          }
+        ],
+        "functions": [
+          {
+            "function_name": "bytea_to_text",
+            "definition": "CREATE OR REPLACE FUNCTION public.bytea_to_text(data bytea)\n RETURNS text\n LANGUAGE c\n IMMUTABLE STRICT\nAS '$libdir/http', $function$bytea_to_text$function$\n"
+          },
+          {
+            "function_name": "cleanup_expired_attempts",
+            "definition": "CREATE OR REPLACE FUNCTION public.cleanup_expired_attempts()\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\nAS $function$\r\nDECLARE\r\n  expired_count int := 0;\r\nBEGIN\r\n  -- Mark attempts as expired where expires_at < now and status = 'in_progress'\r\n  UPDATE public.exam_attempts\r\n  SET status = 'expired'\r\n  WHERE expires_at < now()\r\n    AND status = 'in_progress';\r\n  \r\n  GET DIAGNOSTICS expired_count = ROW_COUNT;\r\n  \r\n  RETURN jsonb_build_object(\r\n    'expired_count', expired_count,\r\n    'timestamp', now()\r\n  );\r\nEND;\r\n$function$\n"
+          },
+          {
+            "function_name": "http",
+            "definition": "CREATE OR REPLACE FUNCTION public.http(request http_request)\n RETURNS http_response\n LANGUAGE c\nAS '$libdir/http', $function$http_request$function$\n"
+          },
+          {
+            "function_name": "http_delete",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_delete(uri character varying)\n RETURNS http_response\n LANGUAGE sql\nAS $function$ SELECT public.http(('DELETE', $1, NULL, NULL, NULL)::public.http_request) $function$\n"
+          },
+          {
+            "function_name": "http_delete",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_delete(uri character varying, content character varying, content_type character varying)\n RETURNS http_response\n LANGUAGE sql\nAS $function$ SELECT public.http(('DELETE', $1, NULL, $3, $2)::public.http_request) $function$\n"
+          },
+          {
+            "function_name": "http_get",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_get(uri character varying)\n RETURNS http_response\n LANGUAGE sql\nAS $function$ SELECT public.http(('GET', $1, NULL, NULL, NULL)::public.http_request) $function$\n"
+          },
+          {
+            "function_name": "http_get",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_get(uri character varying, data jsonb)\n RETURNS http_response\n LANGUAGE sql\nAS $function$\n        SELECT public.http(('GET', $1 || '?' || public.urlencode($2), NULL, NULL, NULL)::public.http_request)\n    $function$\n"
+          },
+          {
+            "function_name": "http_head",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_head(uri character varying)\n RETURNS http_response\n LANGUAGE sql\nAS $function$ SELECT public.http(('HEAD', $1, NULL, NULL, NULL)::public.http_request) $function$\n"
+          },
+          {
+            "function_name": "http_header",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_header(field character varying, value character varying)\n RETURNS http_header\n LANGUAGE sql\nAS $function$ SELECT $1, $2 $function$\n"
+          },
+          {
+            "function_name": "http_list_curlopt",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_list_curlopt()\n RETURNS TABLE(curlopt text, value text)\n LANGUAGE c\nAS '$libdir/http', $function$http_list_curlopt$function$\n"
+          },
+          {
+            "function_name": "http_patch",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_patch(uri character varying, content character varying, content_type character varying)\n RETURNS http_response\n LANGUAGE sql\nAS $function$ SELECT public.http(('PATCH', $1, NULL, $3, $2)::public.http_request) $function$\n"
+          },
+          {
+            "function_name": "http_post",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_post(uri character varying, data jsonb)\n RETURNS http_response\n LANGUAGE sql\nAS $function$\n        SELECT public.http(('POST', $1, NULL, 'application/x-www-form-urlencoded', public.urlencode($2))::public.http_request)\n    $function$\n"
+          },
+          {
+            "function_name": "http_post",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_post(uri character varying, content character varying, content_type character varying)\n RETURNS http_response\n LANGUAGE sql\nAS $function$ SELECT public.http(('POST', $1, NULL, $3, $2)::public.http_request) $function$\n"
+          },
+          {
+            "function_name": "http_put",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_put(uri character varying, content character varying, content_type character varying)\n RETURNS http_response\n LANGUAGE sql\nAS $function$ SELECT public.http(('PUT', $1, NULL, $3, $2)::public.http_request) $function$\n"
+          },
+          {
+            "function_name": "http_reset_curlopt",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_reset_curlopt()\n RETURNS boolean\n LANGUAGE c\nAS '$libdir/http', $function$http_reset_curlopt$function$\n"
+          },
+          {
+            "function_name": "http_set_curlopt",
+            "definition": "CREATE OR REPLACE FUNCTION public.http_set_curlopt(curlopt character varying, value character varying)\n RETURNS boolean\n LANGUAGE c\nAS '$libdir/http', $function$http_set_curlopt$function$\n"
+          },
+          {
+            "function_name": "is_superadmin",
+            "definition": "CREATE OR REPLACE FUNCTION public.is_superadmin()\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\nAS $function$\r\n  SELECT EXISTS (\r\n    SELECT 1 FROM public.profiles p\r\n    WHERE p.user_id = auth.uid()\r\n      AND p.role = 'superadmin'\r\n  );\r\n$function$\n"
+          },
+          {
+            "function_name": "text_to_bytea",
+            "definition": "CREATE OR REPLACE FUNCTION public.text_to_bytea(data text)\n RETURNS bytea\n LANGUAGE c\n IMMUTABLE STRICT\nAS '$libdir/http', $function$text_to_bytea$function$\n"
+          },
+          {
+            "function_name": "update_global_users_updated_at",
+            "definition": "CREATE OR REPLACE FUNCTION public.update_global_users_updated_at()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n  NEW.updated_at = now();\r\n  RETURN NEW;\r\nEND;\r\n$function$\n"
+          },
+          {
+            "function_name": "urlencode",
+            "definition": "CREATE OR REPLACE FUNCTION public.urlencode(data jsonb)\n RETURNS text\n LANGUAGE c\n IMMUTABLE STRICT\nAS '$libdir/http', $function$urlencode_jsonb$function$\n"
+          },
+          {
+            "function_name": "urlencode",
+            "definition": "CREATE OR REPLACE FUNCTION public.urlencode(string bytea)\n RETURNS text\n LANGUAGE c\n IMMUTABLE STRICT\nAS '$libdir/http', $function$urlencode$function$\n"
+          },
+          {
+            "function_name": "urlencode",
+            "definition": "CREATE OR REPLACE FUNCTION public.urlencode(string character varying)\n RETURNS text\n LANGUAGE c\n IMMUTABLE STRICT\nAS '$libdir/http', $function$urlencode$function$\n"
+          }
+        ],
+        "triggers": [
+          {
+            "table_name": "global_users",
+            "trigger_name": "trg_global_users_updated_at",
+            "timing": "BEFORE",
+            "event": "UPDATE",
+            "definition": "EXECUTE FUNCTION update_global_users_updated_at()"
+          }
+        ],
+        "enums": [
+          {
+            "enum_name": "exam_type",
+            "values": [
+              "ielts",
+              "sat",
+              "aptis",
+              "multi_level"
+            ]
+          },
+          {
+            "enum_name": "role_type",
+            "values": [
+              "superadmin",
+              "center_admin",
+              "student"
+            ]
+          },
+          {
+            "enum_name": "student_status",
+            "values": [
+              "unused",
+              "in_progress",
+              "submitted",
+              "expired"
+            ]
+          },
+          {
+            "enum_name": "usage_event_type",
+            "values": [
+              "taken",
+              "expired"
+            ]
+          }
+        ]
+      }
+    }
+  ]

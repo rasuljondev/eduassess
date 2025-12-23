@@ -44,6 +44,19 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
+-- Legacy enums (deprecated but still exist in database for historical compatibility)
+DO $$ BEGIN
+  CREATE TYPE public.student_status AS ENUM ('unused', 'in_progress', 'submitted', 'expired');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+COMMENT ON TYPE public.student_status IS 'Legacy enum - not actively used in new architecture';
+
+DO $$ BEGIN
+  CREATE TYPE public.usage_event_type AS ENUM ('taken', 'expired');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+COMMENT ON TYPE public.usage_event_type IS 'Legacy enum - not actively used in new architecture';
+
 -- =========================================================
 -- CORE TABLES
 -- =========================================================
@@ -53,7 +66,7 @@ CREATE TABLE IF NOT EXISTS public.centers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   slug text UNIQUE NOT NULL,
   name text NOT NULL,
-  logo_url text,
+  logo_path text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -170,13 +183,19 @@ COMMENT ON TABLE public.exam_attempts IS 'Active exam sessions with 6-hour timer
 CREATE TABLE IF NOT EXISTS public.submissions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES public.global_users(id) ON DELETE SET NULL,
-  generated_student_id uuid REFERENCES public.generated_students(id) ON DELETE SET NULL, -- Legacy
+  generated_student_id uuid, -- Legacy: kept for historical data (table may not exist)
   center_id uuid NOT NULL REFERENCES public.centers(id) ON DELETE CASCADE,
   exam public.exam_type NOT NULL,
   test_id uuid REFERENCES public.tests(id),
   student_full_name text NOT NULL,
   phone_number text,
   answers jsonb NOT NULL,
+  -- Legacy columns (kept for historical data compatibility)
+  student_login text,
+  student_exam public.exam_type,
+  student_test_name text,
+  student_created_at timestamptz,
+  -- Grading fields
   is_graded boolean NOT NULL DEFAULT false,
   graded_at timestamptz,
   graded_by uuid REFERENCES auth.users(id),
@@ -198,7 +217,7 @@ CREATE TABLE IF NOT EXISTS public.scores (
   exam public.exam_type NOT NULL,
   auto_score jsonb,
   manual_score jsonb,
-  final_score jsonb NOT NULL,
+  final_score jsonb, -- Nullable: set after grading
   is_published boolean NOT NULL DEFAULT false,
   published_at timestamptz,
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -521,7 +540,9 @@ WITH CHECK (false);
 -- Submissions: Students can insert/read own, admins can read/update their center's
 DROP POLICY IF EXISTS "submissions_student_insert_active" ON public.submissions;
 DROP POLICY IF EXISTS "submissions_student_insert" ON public.submissions;
+DROP POLICY IF EXISTS "submissions_student_insert_v2" ON public.submissions;
 DROP POLICY IF EXISTS "submissions_student_read" ON public.submissions;
+DROP POLICY IF EXISTS "submissions_student_read_v2" ON public.submissions;
 DROP POLICY IF EXISTS "submissions_center_admin_read" ON public.submissions;
 DROP POLICY IF EXISTS "submissions_center_admin_update" ON public.submissions;
 DROP POLICY IF EXISTS "submissions_superadmin_read" ON public.submissions;
@@ -555,6 +576,30 @@ USING (
     FROM public.global_users gu
     WHERE gu.auth_user_id = auth.uid()
       AND gu.id = submissions.user_id
+  )
+);
+
+-- Students can insert their own submissions (v2 - simpler version)
+CREATE POLICY "submissions_student_insert_v2"
+ON public.submissions FOR INSERT
+WITH CHECK (
+  EXISTS (
+    SELECT 1
+    FROM public.global_users u
+    WHERE u.id = submissions.user_id
+      AND u.auth_user_id = auth.uid()
+  )
+);
+
+-- Students can read their own submissions (v2 - simpler version)
+CREATE POLICY "submissions_student_read_v2"
+ON public.submissions FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.global_users u
+    WHERE u.id = submissions.user_id
+      AND u.auth_user_id = auth.uid()
   )
 );
 
@@ -598,6 +643,7 @@ USING (public.is_superadmin());
 -- Scores: Students can read published own, admins can manage their center's
 DROP POLICY IF EXISTS "scores_center_admin_manage" ON public.scores;
 DROP POLICY IF EXISTS "scores_student_read_published" ON public.scores;
+DROP POLICY IF EXISTS "scores_student_read_published_v2" ON public.scores;
 DROP POLICY IF EXISTS "scores_superadmin_read" ON public.scores;
 
 -- Center admins can manage scores for their center
@@ -631,6 +677,19 @@ USING (
     JOIN public.global_users gu ON gu.id = s.user_id
     WHERE s.id = scores.submission_id
       AND gu.auth_user_id = auth.uid()
+  )
+);
+
+-- Students can read published scores (v2 - uses user_id directly)
+CREATE POLICY "scores_student_read_published_v2"
+ON public.scores FOR SELECT
+USING (
+  is_published = true
+  AND EXISTS (
+    SELECT 1
+    FROM public.global_users u
+    WHERE u.id = scores.user_id
+      AND u.auth_user_id = auth.uid()
   )
 );
 
