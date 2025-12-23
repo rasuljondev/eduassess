@@ -6,7 +6,7 @@ import { useAlert } from '../../shared/ui/AlertProvider';
 import { Button } from '../../shared/ui/Button';
 import { getExamById } from '../exams/registry';
 import type { Question, ExamAttempt } from '../../types';
-import { CheckCircle, Send, MessageCircle, Phone, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle, Send, Clock, AlertCircle } from 'lucide-react';
 import { SupabaseExamAttemptService } from '../../services/supabase/SupabaseExamAttemptService';
 
 const examAttemptService = new SupabaseExamAttemptService();
@@ -71,10 +71,7 @@ export const ExamShell: React.FC = () => {
   const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [fullName, setFullName] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [showStudentInfoModal, setShowStudentInfoModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingAttempt, setLoadingAttempt] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
@@ -188,8 +185,10 @@ export const ExamShell: React.FC = () => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
   };
 
-  const handleInitialSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!attemptId) return;
     
     // Validate all questions are answered
     const unanswered = questions.filter(q => !answers[q.id]?.trim());
@@ -198,20 +197,15 @@ export const ExamShell: React.FC = () => {
       return;
     }
     
-    // Show student info modal
-    setShowStudentInfoModal(true);
-  };
-
-  const handleFinalSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!attemptId || !fullName.trim()) return;
+    // Confirm submission
+    const confirmed = window.confirm('Are you sure you want to submit your answers? You cannot change them after submission.');
+    if (!confirmed) return;
     
     setLoading(true);
     try {
-      await examAttemptService.submitAttempt(attemptId, answers, fullName);
+      await examAttemptService.submitAttempt(attemptId, answers);
       
       setSubmitted(true);
-      setShowStudentInfoModal(false);
       showSuccess('Test submitted successfully! Your results will be available soon.');
       
       // Redirect to student portal after 3 seconds
@@ -293,8 +287,8 @@ export const ExamShell: React.FC = () => {
       )}
 
       {/* Content area - adjust padding based on timer visibility */}
-      {/* Timer header is ~48px, StudentLayout header is ~56px, total ~104px = pt-26 */}
-      <div className={`${timeRemaining !== null ? 'pt-28' : 'pt-0'} pb-12 px-4`}>
+      {/* Timer header is ~48px, StudentLayout header is ~56px, positioned below timer = total ~104px */}
+      <div className={`${timeRemaining !== null ? 'pt-28' : 'pt-16'} pb-12 px-4`}>
         <div className="max-w-4xl mx-auto">
           {/* Exam Content */}
           {questions.length > 0 ? (
@@ -302,7 +296,7 @@ export const ExamShell: React.FC = () => {
               questions={questions}
               answers={answers}
               onAnswerChange={handleAnswerChange}
-              onSubmit={handleInitialSubmit}
+              onSubmit={handleSubmit}
             />
           ) : !loadingAttempt ? (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12">
@@ -324,78 +318,6 @@ export const ExamShell: React.FC = () => {
           ) : null}
         </div>
       </div>
-
-      {/* Student Info Modal */}
-      {showStudentInfoModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Confirm Submission
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Please provide your contact information to complete the submission.
-            </p>
-            
-            <form onSubmit={handleFinalSubmit} className="space-y-4">
-              <div>
-                <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-2 font-medium">
-                  <MessageCircle className="w-4 h-4" />
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white"
-                  placeholder="Enter your full name"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300 mb-2 font-medium">
-                  <Phone className="w-4 h-4" />
-                  Phone Number (Optional)
-                </label>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-gray-900 dark:text-white"
-                  placeholder="+998 XX XXX XX XX"
-                />
-              </div>
-              
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mt-6">
-                <p className="text-sm text-yellow-800 dark:text-yellow-400">
-                  <strong>Note:</strong> Once you submit, you cannot change your answers.
-                </p>
-              </div>
-              
-              <div className="flex gap-3 mt-6">
-                <Button
-                  type="button"
-                  color="gray"
-                  onClick={() => setShowStudentInfoModal(false)}
-                  disabled={loading}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  color="indigo"
-                  disabled={loading}
-                  leftIcon={<Send className="w-4 h-4" />}
-                  className="flex-1"
-                >
-                  {loading ? 'Submitting...' : 'Submit Test'}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

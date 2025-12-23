@@ -7,48 +7,48 @@ import { BackgroundMeteorsDots } from '../../shared/ui/background-meteors-dots';
 import { LogIn, Shield, Award, Users, Clock, BarChart3, Mail, Phone, Sun, Moon } from 'lucide-react';
 
 // Reveal component moved outside to ensure stable component definition
-const Reveal = ({
-  children,
-  className = '',
-  delayMs = 0,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  delayMs?: number;
-}) => {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [shown, setShown] = useState(false);
+  const Reveal = ({
+    children,
+    className = '',
+    delayMs = 0,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+    delayMs?: number;
+  }) => {
+    const ref = useRef<HTMLDivElement | null>(null);
+    const [shown, setShown] = useState(false);
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    useEffect(() => {
+      const el = ref.current;
+      if (!el) return;
 
-    const obs = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry?.isIntersecting) {
-          setShown(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.15, rootMargin: '0px 0px -10% 0px' }
+      const obs = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (entry?.isIntersecting) {
+            setShown(true);
+            obs.disconnect();
+          }
+        },
+        { threshold: 0.15, rootMargin: '0px 0px -10% 0px' }
+      );
+
+      obs.observe(el);
+      return () => obs.disconnect();
+    }, []);
+
+    return (
+      <div
+        ref={ref}
+        className={`transform-gpu transition-all duration-700 ease-out ${
+          shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+        } ${className}`}
+        style={{ transitionDelay: `${delayMs}ms` }}
+      >
+        {children}
+      </div>
     );
-
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      className={`transform-gpu transition-all duration-700 ease-out ${
-        shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-      } ${className}`}
-      style={{ transitionDelay: `${delayMs}ms` }}
-    >
-      {children}
-    </div>
-  );
 };
 
 export const LandingPage: React.FC = () => {

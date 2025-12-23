@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { Button } from '../../shared/ui/Button';
 import { GraduationCap, LogOut, User } from 'lucide-react';
@@ -7,11 +7,15 @@ import { GraduationCap, LogOut, User } from 'lucide-react';
 export const StudentLayout: React.FC = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
+
+  // Check if we're on an exam page (has /exam/ in path)
+  const isExamPage = location.pathname.includes('/exam/');
 
   if (!user || user.role !== 'STUDENT') {
     return (
@@ -30,8 +34,11 @@ export const StudentLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-indigo-900/20 dark:to-purple-900/20">
-      {/* Header - positioned below timer if it exists */}
-      <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b dark:border-gray-700 shadow-lg px-6 py-4 flex justify-between items-center sticky top-0 z-40">
+      {/* Header - positioned below timer when on exam page */}
+      {/* Timer is ~48px tall, so header starts at top-[48px] on exam pages */}
+      <header className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg border-b dark:border-gray-700 shadow-lg px-6 py-4 flex justify-between items-center sticky z-40 ${
+        isExamPage ? 'top-[48px]' : 'top-0'
+      }`}>
         <div className="flex items-center gap-3">
           <GraduationCap className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
           <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">

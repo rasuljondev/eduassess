@@ -144,7 +144,7 @@ export class SupabaseExamAttemptService implements ExamAttemptService {
     return data.attempt;
   }
 
-  async submitAttempt(attemptId: string, answers: any, fullName: string): Promise<Submission> {
+  async submitAttempt(attemptId: string, answers: any): Promise<Submission> {
     // Get attempt details
     const attempt = await this.getAttempt(attemptId);
     
@@ -157,7 +157,7 @@ export class SupabaseExamAttemptService implements ExamAttemptService {
       throw new Error('Exam time has expired');
     }
 
-    // Get global user
+    // Get global user with full name
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
@@ -166,13 +166,16 @@ export class SupabaseExamAttemptService implements ExamAttemptService {
 
     const { data: globalUser } = await supabase
       .from('global_users')
-      .select('id, phone_number')
+      .select('id, phone_number, surname, name')
       .eq('auth_user_id', user.id)
       .single();
 
     if (!globalUser) {
       throw new Error('User profile not found');
     }
+
+    // Construct full name from surname and name
+    const fullName = [globalUser.surname, globalUser.name].filter(Boolean).join(' ') || globalUser.name || 'Unknown';
 
     // Create submission
     const { data: submission, error: subError } = await supabase

@@ -39,7 +39,7 @@ export const CenterLandingPage: React.FC = () => {
   const [surname, setSurname] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-
+  
   // Exam type filter (MUST be declared before any conditional returns)
   const [selectedType, setSelectedType] = useState<string | null>(null);
   

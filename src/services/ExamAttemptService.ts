@@ -17,6 +17,6 @@ export interface ExamAttemptService {
   startAttempt(attemptId: string): Promise<ExamAttempt>;
 
   // Submit exam answers
-  submitAttempt(attemptId: string, answers: any, fullName: string): Promise<Submission>;
+  submitAttempt(attemptId: string, answers: any): Promise<Submission>;
 }
 
