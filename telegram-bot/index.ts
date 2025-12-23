@@ -91,7 +91,8 @@ async function registerStudent(
       }),
     });
     
-    return await response.json();
+    const result = await response.json() as { success: boolean; login?: string; password?: string; message?: string; error?: string; is_new?: boolean };
+    return result;
   } catch (error) {
     console.error('Error calling register-student:', error);
     return { success: false, error: 'Failed to register. Please try again.' };

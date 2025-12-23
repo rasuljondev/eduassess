@@ -39,7 +39,7 @@ export const CenterLandingPage: React.FC = () => {
   const [surname, setSurname] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-
+  
   const navigate = useNavigate();
   const { user, login: authLogin } = useAuthStore();
   const { showError, showSuccess } = useAlert();
@@ -460,20 +460,20 @@ export const CenterLandingPage: React.FC = () => {
                   }`}
                 >
                   <form onSubmit={handleLogin} className="space-y-5">
-                    <div>
+                <div>
                       <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2 ml-1">
-                        Login
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="Enter your login"
-                          value={login}
-                          onChange={e => setLogin(e.target.value)}
+                    Login
+                  </label>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      placeholder="Enter your login" 
+                      value={login}
+                      onChange={e => setLogin(e.target.value)}
                           className="w-full bg-white dark:bg-white/5 border-2 border-gray-200 dark:border-white/10 p-3.5 rounded-2xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                          required
-                        />
-                      </div>
+                      required
+                    />
+                  </div>
                     </div>
 
                     <Button
@@ -537,30 +537,30 @@ export const CenterLandingPage: React.FC = () => {
                       />
                     </div>
 
-                    <div>
+                <div>
                       <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1.5 ml-1">
                         Phone Number
-                      </label>
-                      <input
+                  </label>
+                  <input 
                         type="tel"
                         placeholder="+998 XX XXX XX XX"
                         value={phone}
                         onChange={e => setPhone(e.target.value)}
                         className="w-full bg-white dark:bg-white/5 border-2 border-gray-200 dark:border-white/10 p-3 rounded-2xl text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                        required
-                      />
-                    </div>
-
-                    <Button
-                      type="submit"
-                      color="indigo"
-                      fullWidth
-                      size="lg"
-                      isLoading={loading}
+                    required
+                  />
+                </div>
+                
+                <Button 
+                  type="submit"
+                  color="indigo"
+                  fullWidth
+                  size="lg"
+                  isLoading={loading}
                       customClassName="py-3.5 rounded-2xl font-bold text-base shadow-xl shadow-indigo-500/25 active:scale-[0.98] transition-all mt-4"
-                    >
+                >
                       Create Account
-                    </Button>
+                </Button>
 
                     <div className="text-center mt-4">
                       <button
@@ -571,7 +571,7 @@ export const CenterLandingPage: React.FC = () => {
                         Already have an account? Login
                       </button>
                     </div>
-                  </form>
+              </form>
                 </div>
               </div>
 
