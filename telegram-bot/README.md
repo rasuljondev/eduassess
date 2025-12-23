@@ -96,8 +96,8 @@ Request body:
 
 The bot uses the following tables:
 
-- `telegram_connections` - Stores login → telegram_chat_id mappings
-- `generated_students` - Student login information
+- `global_users` - Stores student accounts and `telegram_id` for linking
+- `exam_attempts` / `exam_requests` - Exam workflow and history
 - `submissions` - Student test submissions
 - `scores` - Published scores
 

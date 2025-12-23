@@ -119,3 +119,54 @@ export interface Score {
   publishedAt?: string;
   updatedAt: string;
 }
+
+// New Architecture Types
+export interface GlobalUser {
+  id: string;
+  login: string;
+  surname: string;
+  name: string;
+  phone_number: string;
+  telegram_id?: number;
+  telegram_username?: string;
+  auth_user_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExamRequest {
+  id: string;
+  user_id: string;
+  center_id: string;
+  exam_type: TestType;
+  test_id?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requested_at: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
+  
+  // Joined data
+  user?: GlobalUser;
+  center?: Center;
+  test?: Test;
+}
+
+export interface ExamAttempt {
+  id: string;
+  user_id: string;
+  exam_request_id: string;
+  center_id: string;
+  exam_type: TestType;
+  test_id?: string;
+  status: 'ready' | 'in_progress' | 'submitted' | 'expired';
+  started_at?: string;
+  expires_at?: string;
+  submission_id?: string;
+  created_at: string;
+  
+  // Joined data
+  user?: GlobalUser;
+  center?: Center;
+  test?: Test;
+  submission?: Submission;
+}

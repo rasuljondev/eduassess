@@ -39,26 +39,63 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 });
 
 // Welcome message
-const WELCOME_MESSAGE = `👋 Welcome to EduAssess Bot!
+const WELCOME_MESSAGE = `👋 Welcome to EduAssess! 🎓
 
-📚 About EduAssess:
-EduAssess is a professional online assessment platform that helps education centers conduct exams efficiently.
+To create your account or link your existing account, please send your information in this format:
 
-📝 How to use this bot:
-1. Send your login credentials (e.g., test_ielts_ab12c)
-2. We'll check your test results
-3. If your score is ready, we'll send it to you
-4. If not ready yet, we'll notify you once it's graded
+Surname Name PhoneNumber
 
-💡 Your login is the same one you used to take the exam.
+📝 Example (copy and edit):
+Karimov Javohir +998901234567
 
-Need help? Just send your login and we'll assist you!`;
+After registration, you'll receive your login credentials to access exams on our website.
+🌐 Visit: eduassess.uz/student`;
 
-// Helper function to validate login format
-function isValidLogin(login: string): boolean {
-  // Login format: typically contains underscore and alphanumeric
-  // Example: test_ielts_ab12c, test_sat_xyz123
-  return /^[a-z0-9_]+$/i.test(login) && login.length > 3;
+// Helper function to parse user data input
+function parseUserData(text: string): { surname: string; name: string; phone: string } | null {
+  const trimmed = text.trim();
+  const parts = trimmed.split(/\s+/);
+  
+  if (parts.length < 3) {
+    return null;
+  }
+  
+  const surname = parts[0];
+  const name = parts[1];
+  const phone = parts.slice(2).join(' '); // In case phone has spaces
+  
+  return { surname, name, phone };
+}
+
+// Call register-student Edge Function
+async function registerStudent(
+  surname: string,
+  name: string,
+  phone: string,
+  telegramId: number,
+  telegramUsername?: string
+): Promise<{ success: boolean; login?: string; password?: string; message?: string; error?: string; is_new?: boolean }> {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/register-student`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({
+        surname,
+        name,
+        phone_number: phone,
+        telegram_id: telegramId,
+        telegram_username: telegramUsername,
+      }),
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error calling register-student:', error);
+    return { success: false, error: 'Failed to register. Please try again.' };
+  }
 }
 
 // Helper function to format score message
@@ -88,143 +125,191 @@ function formatScoreMessage(score: any, testName?: string): string {
   return message;
 }
 
-// Store Telegram connection
-async function storeConnection(login: string, chatId: number): Promise<void> {
-  try {
-    const { error } = await supabase
-      .from('telegram_connections')
-      .upsert({
-        login: login.toLowerCase().trim(),
-        telegram_chat_id: chatId,
-        connected_at: new Date().toISOString(),
-      }, {
-        onConflict: 'login',
-      });
+// Note: Old architecture used telegram_connections(login -> chat_id).
+// New architecture stores telegram_id directly in global_users and uses it for notifications.
 
-    if (error) {
-      console.error('Error storing connection:', error);
-    } else {
-      console.log(`Stored connection: ${login} -> ${chatId}`);
-    }
-  } catch (err) {
-    console.error('Error in storeConnection:', err);
-  }
-}
-
-// Get score by login
-async function getScoreByLogin(login: string): Promise<{ score: any; testName?: string; isPublished: boolean } | null> {
+// Get user results by telegram_id
+async function getUserResults(telegramId: number): Promise<Array<{ centerName: string; examType: string; status: string; score?: any; date: string }>> {
   try {
-    // Find student by login
-    const { data: student, error: studentError } = await supabase
-      .from('generated_students')
-      .select('id')
-      .eq('login', login.toLowerCase().trim())
+    // Find user by telegram_id
+    const { data: user, error: userError } = await supabase
+      .from('global_users')
+      .select('id, login')
+      .eq('telegram_id', telegramId)
       .maybeSingle();
 
-    if (studentError || !student) {
-      console.log(`Student not found for login: ${login}`);
-      return null;
+    if (userError || !user) {
+      console.log(`User not found for telegram_id: ${telegramId}`);
+      return [];
     }
 
-    // Find submission for this student
-    const { data: submission, error: subError } = await supabase
-      .from('submissions')
-      .select(`
-        id,
-        test_id,
-        tests ( name )
-      `)
-      .eq('generated_student_id', student.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (subError || !submission) {
-      console.log(`Submission not found for login: ${login}`);
-      return null;
-    }
-
-    // Get score
-    const { data: scoreData, error: scoreError } = await supabase
-      .from('scores')
+    // Get user's exam attempts with results
+    const { data: attempts, error: attemptsError } = await supabase
+      .from('user_exam_history')
       .select('*')
-      .eq('submission_id', submission.id)
-      .maybeSingle();
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-    if (scoreError || !scoreData) {
-      return null;
+    if (attemptsError || !attempts) {
+      console.log(`No exam history found for user: ${user.login}`);
+      return [];
     }
 
-    const testName = (submission as any).tests?.name;
-
-    return {
-      score: scoreData.final_score,
-      testName,
-      isPublished: scoreData.is_published,
-    };
+    return attempts.map((attempt: any) => ({
+      centerName: attempt.center_name,
+      examType: attempt.exam_type,
+      status: attempt.status,
+      score: attempt.is_published ? attempt.final_score : null,
+      date: attempt.created_at,
+    }));
   } catch (err) {
-    console.error('Error in getScoreByLogin:', err);
-    return null;
+    console.error('Error in getUserResults:', err);
+    return [];
   }
 }
 
 // Handle /start command
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
-  await bot.sendMessage(chatId, WELCOME_MESSAGE);
-});
+  const telegramId = msg.from?.id;
+  
+  if (!telegramId) {
+    await bot.sendMessage(chatId, '❌ Unable to identify your Telegram account. Please try again.');
+    return;
+  }
 
-// Handle login messages
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text?.trim();
+  // Check if user already exists
+  const { data: existingUser } = await supabase
+    .from('global_users')
+    .select('login')
+    .eq('telegram_id', telegramId)
+    .maybeSingle();
 
-  if (!text) return;
-
-  // Ignore commands
-  if (text.startsWith('/')) return;
-
-  // Check if it looks like a login
-  if (!isValidLogin(text)) {
+  if (existingUser) {
     await bot.sendMessage(
       chatId,
-      `❌ Invalid login format. Please send your login credentials (e.g., test_ielts_ab12c)`
+      `👋 Welcome back!\n\nYour login: ${existingUser.login}\n\nUse /results to view your exam scores.\n\n🌐 Visit: eduassess.uz/student`
     );
     return;
   }
 
-  const login = text.toLowerCase().trim();
+  await bot.sendMessage(chatId, WELCOME_MESSAGE);
+});
+
+// Handle /results command
+bot.onText(/\/results/, async (msg) => {
+  const chatId = msg.chat.id;
+  const telegramId = msg.from?.id;
+  
+  if (!telegramId) {
+    await bot.sendMessage(chatId, '❌ Unable to identify your Telegram account.');
+    return;
+  }
 
   try {
-    // Store connection
-    await storeConnection(login, chatId);
+    const results = await getUserResults(telegramId);
 
-    // Check for score
-    const scoreData = await getScoreByLogin(login);
-
-    if (!scoreData) {
-      // No submission found
+    if (results.length === 0) {
       await bot.sendMessage(
         chatId,
-        `🔍 We couldn't find a submission for login: ${login}\n\nPlease make sure you've entered the correct login credentials.`
+        `📊 No exam results found.\n\nMake sure your account is linked and you have taken exams.\n\n🌐 Visit: eduassess.uz/student`
       );
       return;
     }
 
-    if (!scoreData.isPublished) {
-      // Score not published yet
-      await bot.sendMessage(
-        chatId,
-        `⏳ Checking...\n\nYour test is being graded. We'll notify you as soon as your results are ready! 📬`
-      );
-      return;
-    }
+    let message = `📊 Your Exam Results\n\n`;
 
-    // Score is published, send it
-    const scoreMessage = formatScoreMessage(scoreData.score, scoreData.testName);
-    await bot.sendMessage(chatId, scoreMessage);
+    results.forEach((result, index) => {
+      message += `${index + 1}. 🏫 ${result.centerName} - ${result.examType}\n`;
+      message += `   Date: ${new Date(result.date).toLocaleDateString()}\n`;
+      message += `   Status: ${result.status === 'submitted' ? 'Completed ✅' : result.status === 'in_progress' ? 'In Progress ⏳' : 'Ready 📝'}\n`;
+      
+      if (result.score) {
+        message += `   Score: ${JSON.stringify(result.score)}\n`;
+      } else if (result.status === 'submitted') {
+        message += `   Score: Grading in progress ⏳\n`;
+      }
+      
+      message += `\n`;
+    });
+
+    message += `Visit eduassess.uz/student for detailed results.`;
+
+    await bot.sendMessage(chatId, message);
   } catch (err) {
-    console.error('Error handling message:', err);
+    console.error('Error getting results:', err);
+    await bot.sendMessage(
+      chatId,
+      `❌ An error occurred while fetching your results. Please try again later.`
+    );
+  }
+});
+
+// Handle user data messages
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text?.trim();
+  const telegramId = msg.from?.id;
+  const telegramUsername = msg.from?.username;
+
+  if (!text || !telegramId) return;
+
+  // Ignore commands
+  if (text.startsWith('/')) return;
+
+  // Try to parse as user data (Surname Name Phone)
+  const userData = parseUserData(text);
+
+  if (!userData) {
+    await bot.sendMessage(
+      chatId,
+      `❌ Invalid format. Please send your information like this:\n\nSurname Name PhoneNumber\n\nExample:\nKarimov Javohir +998901234567`
+    );
+    return;
+  }
+
+  try {
+    await bot.sendMessage(chatId, '⏳ Processing your request...');
+
+    // Call register-student Edge Function
+    const result = await registerStudent(
+      userData.surname,
+      userData.name,
+      userData.phone,
+      telegramId,
+      telegramUsername
+    );
+
+    if (!result.success) {
+      if (result.error?.includes('already linked')) {
+        await bot.sendMessage(
+          chatId,
+          `❌ This account is already linked to another Telegram user.\n\nIf this is your account, please contact support.`
+        );
+      } else {
+        await bot.sendMessage(
+          chatId,
+          `❌ ${result.error || 'Registration failed. Please try again.'}`
+        );
+      }
+      return;
+    }
+
+    if (result.is_new) {
+      // New account created
+      await bot.sendMessage(
+        chatId,
+        `✅ Account created successfully!\n\nYour login: ${result.login}\nPassword: ${result.password}\n\n⚠️ Keep this information safe. You'll need it to access exams on our website.\n\n🌐 Visit: eduassess.uz/student\n\nUse /results to view your exam scores.`
+      );
+    } else {
+      // Existing account linked
+      await bot.sendMessage(
+        chatId,
+        `✅ Account found and linked!\n\nYour login: ${result.login}\nPassword: ${result.password}\n\nYou can now view your exam results here in Telegram!\n\nUse /results to see your scores.\n\n🌐 Visit: eduassess.uz/student`
+      );
+    }
+  } catch (err) {
+    console.error('Error handling user data:', err);
     await bot.sendMessage(
       chatId,
       `❌ An error occurred. Please try again later or contact support.`
@@ -239,29 +324,22 @@ app.use(express.json());
 // Webhook endpoint for admin notifications
 app.post('/notify', async (req, res) => {
   try {
-    const { login, score, testName } = req.body;
+    const { telegram_id, score, testName, student_name, login } = req.body;
 
-    if (!login || !score) {
-      return res.status(400).json({ error: 'Missing login or score' });
+    if (!telegram_id || !score) {
+      return res.status(400).json({ error: 'Missing telegram_id or score' });
     }
 
-    // Get telegram_chat_id from connections
-    const { data: connection, error: connError } = await supabase
-      .from('telegram_connections')
-      .select('telegram_chat_id')
-      .eq('login', login.toLowerCase().trim())
-      .maybeSingle();
+    const chatId = Number(telegram_id);
+    const scoreMessage =
+      typeof score === 'string' || typeof score === 'number'
+        ? formatScoreMessage({ overall: score }, testName)
+        : formatScoreMessage(score, testName);
 
-    if (connError || !connection) {
-      console.log(`No Telegram connection found for login: ${login}`);
-      return res.status(404).json({ error: 'User not connected to bot' });
-    }
+    const prefix = student_name || login ? `👤 ${student_name || login}\n\n` : '';
+    await bot.sendMessage(chatId, `${prefix}${scoreMessage}`);
 
-    // Send notification
-    const scoreMessage = formatScoreMessage(score, testName);
-    await bot.sendMessage(connection.telegram_chat_id, scoreMessage);
-
-    console.log(`Sent notification to ${login} (chat: ${connection.telegram_chat_id})`);
+    console.log(`Sent notification to telegram_id=${chatId}`);
     res.json({ success: true, message: 'Notification sent' });
   } catch (err: any) {
     console.error('Error in /notify webhook:', err);

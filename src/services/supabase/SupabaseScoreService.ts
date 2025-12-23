@@ -100,20 +100,19 @@ export class SupabaseScoreService implements ScoreService {
   }
 
   async getScoreByLogin(login: string): Promise<Score | null> {
-    // Find submission by login via generated_students
-    const { data: student } = await supabase
-      .from('generated_students')
+    // New architecture: global_users.login -> submissions.user_id
+    const { data: gu, error: guErr } = await supabase
+      .from('global_users')
       .select('id')
       .eq('login', login)
       .maybeSingle();
 
-    if (!student) return null;
+    if (guErr || !gu) return null;
 
-    // Find submission for this student
     const { data: submission } = await supabase
       .from('submissions')
       .select('id')
-      .eq('generated_student_id', student.id)
+      .eq('user_id', gu.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -125,12 +124,13 @@ export class SupabaseScoreService implements ScoreService {
 
   private async notifyTelegramBot(submissionId: string, scoreData: any): Promise<void> {
     try {
-      // Get submission details to find login
+      // Get submission details to find telegram_id (via global_users)
       const { data: submission, error: subErr } = await supabase
         .from('submissions')
         .select(`
-          generated_student_id,
+          user_id,
           test_id,
+          student_full_name,
           tests ( name )
         `)
         .eq('id', submissionId)
@@ -141,19 +141,19 @@ export class SupabaseScoreService implements ScoreService {
         return;
       }
 
-      // Get login from generated_students
-      const { data: student, error: studentErr } = await supabase
-        .from('generated_students')
-        .select('login')
-        .eq('id', (submission as any).generated_student_id)
+      const { data: gu, error: guErr } = await supabase
+        .from('global_users')
+        .select('telegram_id, login')
+        .eq('id', (submission as any).user_id)
         .maybeSingle();
 
-      if (studentErr || !student) {
-        console.error('Failed to get student login for notification:', studentErr);
+      if (guErr || !gu || !gu.telegram_id) {
+        // No telegram linked -> nothing to notify
         return;
       }
 
-      const login = student.login;
+      const login = gu.login;
+      const telegramId = Number(gu.telegram_id);
       const testName = (submission as any).tests?.name;
       const webhookUrl = import.meta.env.VITE_BOT_WEBHOOK_URL || 'http://localhost:3001';
 
@@ -164,7 +164,9 @@ export class SupabaseScoreService implements ScoreService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          telegram_id: telegramId,
           login,
+          student_name: (submission as any).student_full_name,
           score: scoreData.final_score,
           testName,
         }),

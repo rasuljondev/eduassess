@@ -29,13 +29,6 @@ create table if not exists public.questions (
 );
 create index if not exists idx_questions_test on public.questions(test_id, order_num);
 
--- Telegram bot connections (for future use)
-create table if not exists public.telegram_connections (
-  login text primary key,
-  telegram_chat_id bigint not null,
-  connected_at timestamptz not null default now()
-);
-
 -- Update submissions table with grading fields
 alter table public.submissions 
 add column if not exists phone_number text,
@@ -72,17 +65,19 @@ create policy "tests_superadmin_read"
 on public.tests for select
 using (public.is_superadmin());
 
--- Students can read tests for their assigned exam type
+-- Students can read tests only when they have an active approved attempt for that test (new architecture)
 drop policy if exists "tests_student_read" on public.tests;
 create policy "tests_student_read"
 on public.tests for select
 using (
   exists (
-    select 1 from public.student_access sa
-    where sa.auth_user_id = auth.uid()
-    and sa.exam = tests.exam_type
-    and sa.center_id = tests.center_id
-    and sa.expires_at > now()
+    select 1
+    from public.exam_attempts ea
+    join public.global_users gu on gu.id = ea.user_id
+    where gu.auth_user_id = auth.uid()
+      and ea.test_id = tests.id
+      and ea.status in ('ready', 'in_progress')
+      and (ea.expires_at is null or ea.expires_at > now())
   )
 );
 
@@ -116,20 +111,15 @@ create policy "questions_student_read"
 on public.questions for select
 using (
   exists (
-    select 1 from public.student_access sa
-    join public.tests t on t.exam_type = sa.exam
-    where sa.auth_user_id = auth.uid()
-    and questions.test_id = t.id
-    and sa.expires_at > now()
+    select 1
+    from public.exam_attempts ea
+    join public.global_users gu on gu.id = ea.user_id
+    where gu.auth_user_id = auth.uid()
+      and ea.test_id = questions.test_id
+      and ea.status in ('ready', 'in_progress')
+      and (ea.expires_at is null or ea.expires_at > now())
   )
 );
-
--- RLS policies for generated_students (students need to read their own record for submission verification)
--- Add policy for students to read their own generated_students record
-drop policy if exists "gen_students_self_read" on public.generated_students;
-create policy "gen_students_self_read"
-on public.generated_students for select
-using (auth_user_id = auth.uid());
 
 -- RLS policies for submissions
 alter table public.submissions enable row level security;
@@ -149,9 +139,16 @@ create policy "submissions_student_insert"
 on public.submissions for insert
 with check (
   exists (
-    select 1 from public.generated_students gs
-    where gs.auth_user_id = auth.uid()
-    and gs.id = generated_student_id
+    select 1
+    from public.global_users gu
+    join public.exam_attempts ea on ea.user_id = gu.id
+    where gu.auth_user_id = auth.uid()
+      and gu.id = submissions.user_id
+      and ea.center_id = submissions.center_id
+      and ea.test_id = submissions.test_id
+      and ea.status = 'in_progress'
+      and (ea.expires_at is null or ea.expires_at > now())
+      and ea.submission_id is null
   )
 );
 
@@ -160,9 +157,10 @@ create policy "submissions_student_read"
 on public.submissions for select
 using (
   exists (
-    select 1 from public.generated_students gs
-    where gs.auth_user_id = auth.uid()
-    and gs.id = generated_student_id
+    select 1
+    from public.global_users gu
+    where gu.auth_user_id = auth.uid()
+      and gu.id = submissions.user_id
   )
 );
 
@@ -203,50 +201,8 @@ create policy "submissions_superadmin_read"
 on public.submissions for select
 using (public.is_superadmin());
 
--- =========================================================
--- FIX: submission trigger must bypass RLS on student_usage_events
--- In mig.sql, student_usage_events blocks all client writes via RLS.
--- The submission trigger writes to student_usage_events, so we must run it
--- as SECURITY DEFINER (table owner) to bypass RLS.
--- =========================================================
-
-create or replace function public.on_submission_created()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  gs record;
-begin
-  -- Try to fetch generated student details (may be null if already deleted)
-  select center_id, exam, test_name
-  into gs
-  from public.generated_students
-  where id = new.generated_student_id;
-
-  insert into public.student_usage_events(center_id, generated_student_id, exam, test_name, event_type, created_at)
-  values (
-    coalesce(gs.center_id, new.center_id),
-    new.generated_student_id,
-    coalesce(gs.exam, new.exam),
-    coalesce(gs.test_name, null),
-    'taken',
-    new.created_at
-  );
-
-  -- Mark student as submitted (if record still exists)
-  update public.generated_students
-  set status = 'submitted'
-  where id = new.generated_student_id;
-
-  return new;
-end $$;
-
-drop trigger if exists trg_submission_created on public.submissions;
-create trigger trg_submission_created
-after insert on public.submissions
-for each row execute function public.on_submission_created();
+-- NOTE: Old architecture used a submission trigger to write into student_usage_events and update generated_students.
+-- New architecture does NOT use that trigger. Attempts are updated by app logic.
 
 -- RLS policies for scores (if not already enabled)
 alter table public.scores enable row level security;
@@ -283,10 +239,11 @@ on public.scores for select
 using (
   is_published = true
   and exists (
-    select 1 from public.submissions s
-    join public.generated_students gs on gs.id = s.generated_student_id
+    select 1
+    from public.submissions s
+    join public.global_users gu on gu.id = s.user_id
     where s.id = scores.submission_id
-    and gs.login = (select login from public.generated_students where auth_user_id = auth.uid() limit 1)
+      and gu.auth_user_id = auth.uid()
   )
 );
 
@@ -295,24 +252,7 @@ create policy "scores_superadmin_read"
 on public.scores for select
 using (public.is_superadmin());
 
--- RLS policies for telegram_connections
-alter table public.telegram_connections enable row level security;
-
--- Allow service role (bot) to manage connections
--- Note: Bot uses service role key, so RLS is bypassed, but we add policy for completeness
-drop policy if exists "telegram_connections_service_role" on public.telegram_connections;
-create policy "telegram_connections_service_role"
-on public.telegram_connections for all
-using (true)
-with check (true);
-
--- Students can read their own connection
-drop policy if exists "telegram_connections_self_read" on public.telegram_connections;
-create policy "telegram_connections_self_read"
-on public.telegram_connections for select
-using (
-  login = (select login from public.generated_students where auth_user_id = auth.uid() limit 1)
-);
+-- NOTE: New architecture stores telegram_id in public.global_users, so telegram_connections is not used.
 
 -- Success message
 select 'Test & Question Management schema applied successfully!' as status;

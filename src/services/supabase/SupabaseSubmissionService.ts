@@ -4,62 +4,9 @@ import { supabase } from '../../lib/supabase';
 
 export class SupabaseSubmissionService implements SubmissionService {
   async submitTest(sessionId: string, fullName: string, data: SubmitTestData): Promise<Submission> {
-    // sessionId is passed as the current user's id from ExamShell; we rely on auth + student_access.
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
-
-    // Students can read their own access record (RLS), use it to populate submission fields
-    const { data: access, error: accessErr } = await supabase
-      .from('student_access')
-      .select('generated_student_id, center_id, exam, expires_at')
-      .eq('auth_user_id', user.id)
-      .maybeSingle();
-
-    if (accessErr) throw new Error(accessErr.message);
-    if (!access) throw new Error('No active exam access found.');
-
-    const expiresAt = new Date(access.expires_at);
-    if (Date.now() > expiresAt.getTime()) throw new Error('Session expired');
-
-    const insertData: any = {
-      generated_student_id: access.generated_student_id,
-      center_id: access.center_id,
-      exam: access.exam,
-      student_full_name: fullName,
-      answers: data.answers,
-    };
-
-    // Add optional fields
-    if (data.testId) insertData.test_id = data.testId;
-    if (data.phoneNumber) insertData.phone_number = data.phoneNumber;
-
-    console.log('[SupabaseSubmissionService] Submitting with data:', {
-      auth_user_id: user.id,
-      generated_student_id: access.generated_student_id,
-      center_id: access.center_id,
-      exam: access.exam,
-      test_id: data.testId,
-    });
-
-    // The RLS policy on submissions will ensure students can only insert their own records
-    // No need for additional verification here
-    const { data: inserted, error: insErr } = await supabase
-      .from('submissions')
-      .insert(insertData)
-      .select('id, generated_student_id, student_full_name, answers, phone_number, test_id, created_at')
-      .single();
-
-    console.log('[SupabaseSubmissionService] Insert result:', { inserted, insErr });
-
-    if (insErr || !inserted) throw new Error(insErr?.message || 'Failed to submit');
-
-    return {
-      id: inserted.id,
-      sessionId: inserted.generated_student_id || sessionId,
-      fullName: inserted.student_full_name,
-      answers: inserted.answers,
-      submittedAt: inserted.created_at,
-    };
+    // Legacy method: old architecture used student_access + generated_students.
+    // New architecture submits via ExamAttemptService (attemptId-based flow).
+    throw new Error('submitTest is deprecated. Use ExamAttemptService.submitAttempt(attemptId, answers, fullName).');
   }
 
   async getSubmissions(centerSlug: string): Promise<Submission[]> {
@@ -76,7 +23,7 @@ export class SupabaseSubmissionService implements SubmissionService {
       .from('submissions')
       .select(`
         id,
-        generated_student_id,
+        user_id,
         student_full_name,
         answers,
         phone_number,
@@ -86,6 +33,9 @@ export class SupabaseSubmissionService implements SubmissionService {
         created_at,
         tests (
           name
+        ),
+        global_users (
+          login
         )
       `)
       .eq('center_id', center.id)
@@ -96,7 +46,7 @@ export class SupabaseSubmissionService implements SubmissionService {
 
     return data.map((row: any) => ({
       id: row.id,
-      sessionId: row.generated_student_id || 'unknown',
+      sessionId: row.global_users?.login || row.user_id || 'unknown',
       fullName: row.student_full_name,
       answers: row.answers,
       submittedAt: row.created_at,
@@ -129,7 +79,7 @@ export class SupabaseSubmissionService implements SubmissionService {
       .from('submissions')
       .select(`
         id,
-        generated_student_id,
+        user_id,
         student_full_name,
         answers,
         phone_number,
@@ -138,7 +88,8 @@ export class SupabaseSubmissionService implements SubmissionService {
         graded_at,
         graded_by,
         created_at,
-        tests ( name )
+        tests ( name ),
+        global_users ( login )
       `)
       .eq('center_id', centerId)
       .order('created_at', { ascending: false });
@@ -148,7 +99,7 @@ export class SupabaseSubmissionService implements SubmissionService {
 
     return data.map((row: any) => ({
       id: row.id,
-      sessionId: row.generated_student_id,
+      sessionId: row.global_users?.login || row.user_id,
       fullName: row.student_full_name,
       answers: row.answers,
       submittedAt: row.created_at,

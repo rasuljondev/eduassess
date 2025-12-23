@@ -125,6 +125,21 @@ export const AdminLayout: React.FC = () => {
                 <LayoutDashboard className={`${isSidebarOpen ? 'w-5 h-5' : 'w-3 h-3'}`} />
               </Link>
 
+              {/* Exam Approvals */}
+              <Link
+                to="/admin/approvals"
+                className={`flex items-center justify-center mb-2 rounded-xl transition-all duration-200 ${
+                  isSidebarOpen ? 'p-4 mx-2' : 'p-2 mx-0'
+                } ${
+                  isActive('/admin/approvals')
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'hover:bg-slate-700/50 text-indigo-400'
+                }`}
+                title="Exam Approvals"
+              >
+                <Users className={`${isSidebarOpen ? 'w-5 h-5' : 'w-3 h-3'}`} />
+              </Link>
+
               {/* Test Management */}
               <Link
                 to="/admin/tests"
