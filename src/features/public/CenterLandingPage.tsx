@@ -56,12 +56,14 @@ export const CenterLandingPage: React.FC = () => {
     }
   }, [user, center]);
 
-  // Reload exams when user logs in
+  // Reload exams when user logs in (only once)
+  const [hasReloadedExams, setHasReloadedExams] = useState(false);
   useEffect(() => {
-    if (user && center && exams.length === 0) {
+    if (user && center && !hasReloadedExams) {
+      setHasReloadedExams(true);
       loadCenterData();
     }
-  }, [user, center]);
+  }, [user, center, hasReloadedExams]);
 
   // Manage dark mode
   useEffect(() => {
@@ -264,253 +266,293 @@ export const CenterLandingPage: React.FC = () => {
     );
   }
 
-  // If user is logged in, show the exam list interface
-  if (user && user.role === 'STUDENT') {
-      return (
-      <BackgroundMeteorsDots className="min-h-screen p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-indigo-900/20 dark:to-purple-900/20 transition-colors duration-300">
-      {/* Logout & Dark Mode Toggle */}
-      <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
-        <Button
-          color="gray"
-          size="sm"
-          onClick={async () => {
-            const { logout } = useAuthStore.getState();
-            logout();
-            navigate('/');
-          }}
-          leftIcon={<LogOut className="w-4 h-4" />}
-          customClassName="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 shadow-xl"
-        >
-          Logout
-        </Button>
-        <button
-          type="button"
-          onClick={() => setIsDarkMode(!isDarkMode)}
-          className="p-3 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 shadow-xl hover:scale-110 transition-all duration-300"
-          aria-label="Toggle dark mode"
-        >
-          {isDarkMode ? (
-            <Sun className="w-6 h-6 text-yellow-500" />
-          ) : (
-            <Moon className="w-6 h-6 text-indigo-600" />
-          )}
-        </button>
-      </div>
+  // Get unique exam types for sidebar
+  const examTypes = [...new Set(exams.map(e => e.examType))];
+  
+  // Exam type icons and colors
+  const examTypeConfig: Record<string, { icon: string; color: string; bgColor: string }> = {
+    'ielts': { icon: '🌍', color: 'text-red-500', bgColor: 'bg-red-500' },
+    'sat': { icon: '📐', color: 'text-blue-500', bgColor: 'bg-blue-500' },
+    'aptis': { icon: '📚', color: 'text-green-500', bgColor: 'bg-green-500' },
+    'multi_level': { icon: '📊', color: 'text-purple-500', bgColor: 'bg-purple-500' },
+  };
 
-      <div className="relative z-10 max-w-6xl mx-auto py-12">
-        {/* Center Header */}
-        <div className="bg-white/80 dark:bg-gray-800/40 backdrop-blur-2xl border border-gray-200 dark:border-white/10 rounded-3xl shadow-xl p-8 mb-8">
-          <div className="flex items-center gap-6">
+  // State for selected exam type filter
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  
+  // Filter exams by selected type
+  const filteredExams = selectedType 
+    ? exams.filter(e => e.examType === selectedType)
+    : exams;
+
+  // If user is logged in, show the exam list interface with sidebar
+  if (user && user.role === 'STUDENT') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-indigo-900/20 dark:to-purple-900/20 transition-colors duration-300 flex">
+        {/* Sidebar */}
+        <aside className="fixed left-0 top-0 h-full w-20 bg-gradient-to-b from-slate-900/95 to-slate-800/95 backdrop-blur-sm shadow-lg z-50 flex flex-col py-6">
+          {/* Center Logo */}
+          <div className="flex items-center justify-center mb-6 px-2">
             {center.logoUrl ? (
-              <div className="bg-white p-4 rounded-2xl shadow-lg">
-                <img 
-                  src={center.logoUrl} 
-                  alt={center.name} 
-                  className="h-24 w-auto object-contain" 
-                />
-              </div>
+              <img 
+                src={center.logoUrl} 
+                alt={center.name} 
+                className="w-12 h-12 rounded-xl object-cover bg-white p-1" 
+              />
             ) : (
-              <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl flex items-center justify-center">
-                <Shield className="w-16 h-16 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl flex items-center justify-center">
+                <Shield className="w-6 h-6 text-white" />
               </div>
             )}
-            <div>
-              <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2">
-                {center.name}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Professional Online Assessment Platform
-              </p>
-            </div>
           </div>
-        </div>
 
-        {/* User Not Logged In */}
-        {!user && (
-          <div className="bg-white/80 dark:bg-gray-800/40 backdrop-blur-2xl border border-gray-200 dark:border-white/10 rounded-3xl shadow-xl p-12 text-center">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Login to Register for Exams
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Access your student portal to register for exams at this center
+          {/* All Tests Button */}
+          <button
+            onClick={() => setSelectedType(null)}
+            className={`flex flex-col items-center justify-center mb-2 rounded-xl transition-all duration-200 p-3 mx-2 ${
+              selectedType === null
+                ? 'bg-indigo-600 text-white shadow-lg'
+                : 'hover:bg-slate-700/50 text-gray-400'
+            }`}
+            title="All Tests"
+          >
+            <span className="text-lg">📋</span>
+            <span className="text-[10px] mt-1 font-medium">All</span>
+          </button>
+
+          {/* Exam Type Icons */}
+          {examTypes.map(type => {
+            const config = examTypeConfig[type?.toLowerCase()] || { icon: '📝', color: 'text-gray-500', bgColor: 'bg-gray-500' };
+            const typeCount = exams.filter(e => e.examType === type).length;
+            
+            return (
+              <button
+                key={type}
+                onClick={() => setSelectedType(selectedType === type ? null : type)}
+                className={`flex flex-col items-center justify-center mb-2 rounded-xl transition-all duration-200 p-3 mx-2 relative ${
+                  selectedType === type
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'hover:bg-slate-700/50 text-gray-400'
+                }`}
+                title={`${type?.toUpperCase()} (${typeCount})`}
+              >
+                <span className="text-lg">{config.icon}</span>
+                <span className="text-[10px] mt-1 font-medium uppercase">{type?.slice(0, 4)}</span>
+                {typeCount > 0 && (
+                  <span className={`absolute -top-1 -right-1 w-4 h-4 ${config.bgColor} text-white text-[9px] rounded-full flex items-center justify-center font-bold`}>
+                    {typeCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Refresh Button */}
+          <button
+            onClick={async () => {
+              await loadCenterData();
+              await loadUserData();
+            }}
+            className="flex flex-col items-center justify-center mb-2 rounded-xl transition-all duration-200 p-3 mx-2 hover:bg-slate-700/50 text-gray-400"
+            title="Refresh"
+          >
+            <span className="text-lg">🔄</span>
+            <span className="text-[10px] mt-1 font-medium">Refresh</span>
+          </button>
+
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className="flex flex-col items-center justify-center mb-2 rounded-xl transition-all duration-200 p-3 mx-2 hover:bg-slate-700/50 text-yellow-400"
+            title={isDarkMode ? 'Light Mode' : 'Dark Mode'}
+          >
+            {isDarkMode ? (
+              <>
+                <Sun className="w-5 h-5" />
+                <span className="text-[10px] mt-1 font-medium">Light</span>
+              </>
+            ) : (
+              <>
+                <Moon className="w-5 h-5" />
+                <span className="text-[10px] mt-1 font-medium">Dark</span>
+              </>
+            )}
+          </button>
+
+          {/* Logout */}
+          <button
+            onClick={() => {
+              const { logout } = useAuthStore.getState();
+              logout();
+              navigate('/');
+            }}
+            className="flex flex-col items-center justify-center rounded-xl transition-all duration-200 p-3 mx-2 hover:bg-red-900/20 text-red-400"
+            title="Logout"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="text-[10px] mt-1 font-medium">Exit</span>
+          </button>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 ml-20 p-6 overflow-y-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {center.name}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              {selectedType ? `${selectedType.toUpperCase()} Tests` : 'All Available Tests'}
             </p>
-            <Button
-              color="indigo"
-              size="lg"
-              onClick={() => navigate('/student')}
-            >
-              Student Portal
-            </Button>
           </div>
-        )}
 
-        {/* User Logged In */}
-        {user && user.role === 'STUDENT' && (
-          <>
-            {/* Available Exams */}
-            <div className="bg-white/80 dark:bg-gray-800/40 backdrop-blur-2xl border border-gray-200 dark:border-white/10 rounded-3xl shadow-xl p-8 mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Available Exams
-                </h2>
-                <Button
-                  size="sm"
-                  color="gray"
-                  onClick={async () => {
-                    await loadCenterData();
-                    await loadUserData();
-                  }}
-                >
-                  Refresh
-                </Button>
-              </div>
-              
-              {exams.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-gray-500 dark:text-gray-400 mb-2">No exams available at this time</p>
-                  <p className="text-sm text-gray-400 dark:text-gray-500">
-                    Contact the center administrator to add exams.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid md:grid-cols-2 gap-4">
-                  {exams.map((exam) => {
-                    const status = getExamStatus(exam.examType);
-                    const attempt = getAttemptForExam(exam.examType);
-                    
-                    return (
-                      <div key={exam.id} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                          {exam.name}
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                          {exam.description || `${exam.examType} Exam`}
-                        </p>
-                        
-                        {(status === 'none' || status === 'rejected') && (
-                          <Button
-                            color="indigo"
-                            onClick={() => handleRegisterForExam(exam.examType, exam.id)}
-                            disabled={loading}
-                            className="w-full"
-                          >
-                            {status === 'rejected' ? 'Request Again' : 'Request'}
-                          </Button>
-                        )}
-                        
-                        {status === 'pending' && (
-                          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-center">
-                            <span className="text-yellow-800 dark:text-yellow-400 font-medium">
-                              Pending Approval
-                            </span>
-                          </div>
-                        )}
-                        
-                        {status === 'ready' && (
-                          <Button
-                            color="green"
-                            onClick={async () => {
-                              // Find the attempt for this exam
-                              let readyAttempt = userAttempts.find(
-                                a => a.exam_type === exam.examType && a.status === 'ready'
-                              );
-                              
-                              // If no ready attempt found, try to get it from the service
-                              if (!readyAttempt && center) {
-                                try {
-                                  const activeAttempt = await examAttemptService.getActiveAttempt(center.id, exam.examType);
-                                  if (activeAttempt) {
-                                    readyAttempt = activeAttempt;
-                                    // Reload user data to update state
-                                    await loadUserData();
-                                  }
-                                } catch (err) {
-                                  console.error('Error fetching active attempt:', err);
-                                }
-                              }
-                              
-                              if (readyAttempt) {
-                                handleStartExam(readyAttempt.id);
-                              } else {
-                                showError('Exam attempt not found. Please try refreshing the page.');
-                              }
-                            }}
-                            className="w-full"
-                          >
-                            START TEST
-                          </Button>
-                        )}
-                        
-                        {status === 'in_progress' && attempt && (
-                          <div className="space-y-2">
-                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-center">
-                              <div className="flex items-center justify-center gap-2 text-blue-800 dark:text-blue-400">
-                                <Clock className="w-4 h-4" />
-                                <span className="text-sm">
-                                  Expires: {attempt.expires_at ? new Date(attempt.expires_at).toLocaleString() : 'N/A'}
-                                </span>
-                              </div>
-                            </div>
-                            <Button
-                              color="indigo"
-                              onClick={() => navigate(`/${centerSlug}/exam/${attempt.id}`)}
-                              className="w-full"
-                            >
-                              Continue Exam
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {status === 'submitted' && (
-                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
-                            <span className="text-green-800 dark:text-green-400 font-medium">
-                              Completed ✓
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Past Exams at This Center */}
-            <div className="bg-white/80 dark:bg-gray-800/40 backdrop-blur-2xl border border-gray-200 dark:border-white/10 rounded-3xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                Your Past Exams at {center.name}
+          {/* Available Exams */}
+          <div className="bg-white/80 dark:bg-gray-800/40 backdrop-blur-2xl border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                {selectedType && (
+                  <span className="text-2xl">{examTypeConfig[selectedType?.toLowerCase()]?.icon || '📝'}</span>
+                )}
+                {selectedType ? `${selectedType.toUpperCase()} Tests` : 'Available Exams'}
+                <span className="text-sm font-normal text-gray-500">({filteredExams.length})</span>
               </h2>
+            </div>
               
-              {userAttempts.filter(a => a.status === 'submitted').length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No completed exams yet</p>
-              ) : (
-                <div className="space-y-3">
-                  {userAttempts
-                    .filter(a => a.status === 'submitted')
-                    .map((attempt) => (
-                      <div key={attempt.id} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                        <div>
-                          <p className="font-semibold text-gray-900 dark:text-white">
-                            {attempt.exam_type}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {new Date(attempt.created_at).toLocaleDateString()}
-                          </p>
+            {filteredExams.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500 dark:text-gray-400 mb-2">
+                  {selectedType ? `No ${selectedType.toUpperCase()} tests available` : 'No exams available at this time'}
+                </p>
+                <p className="text-sm text-gray-400 dark:text-gray-500">
+                  {selectedType ? 'Try selecting a different category' : 'Contact the center administrator to add exams.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredExams.map((exam) => {
+                  const status = getExamStatus(exam.examType);
+                  const attempt = getAttemptForExam(exam.examType);
+                  const config = examTypeConfig[exam.examType?.toLowerCase()] || { icon: '📝', color: 'text-gray-500', bgColor: 'bg-gray-500' };
+                  
+                  return (
+                    <div key={exam.id} className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg transition-all">
+                      {/* Header with type badge */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-xl">{config.icon}</span>
+                            <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded ${config.bgColor} text-white`}>
+                              {exam.examType}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-gray-900 dark:text-white text-lg">
+                            {exam.name}
+                          </h4>
                         </div>
-                        <div className="text-right">
-                          <span className="inline-block px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded-lg text-sm">
-                            Completed
+                      </div>
+                      
+                      {exam.description && (
+                        <p className="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+                          {exam.description}
+                        </p>
+                      )}
+                      
+                      {exam.duration_minutes && (
+                        <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 mb-4">
+                          <Clock className="w-3 h-3" />
+                          <span>{exam.duration_minutes} minutes</span>
+                        </div>
+                      )}
+                      
+                      {/* Action buttons */}
+                      {(status === 'none' || status === 'rejected') && (
+                        <Button
+                          color="indigo"
+                          size="sm"
+                          onClick={() => handleRegisterForExam(exam.examType, exam.id)}
+                          disabled={loading}
+                          className="w-full"
+                        >
+                          {status === 'rejected' ? 'Request Again' : 'Request Access'}
+                        </Button>
+                      )}
+                      
+                      {status === 'pending' && (
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 text-center">
+                          <span className="text-yellow-800 dark:text-yellow-400 text-sm font-medium">
+                            ⏳ Pending Approval
                           </span>
                         </div>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
+                      )}
+                      
+                      {status === 'ready' && (
+                        <Button
+                          color="green"
+                          size="sm"
+                          onClick={async () => {
+                            let readyAttempt = userAttempts.find(
+                              a => a.exam_type === exam.examType && a.status === 'ready'
+                            );
+                            
+                            if (!readyAttempt && center) {
+                              try {
+                                const activeAttempt = await examAttemptService.getActiveAttempt(center.id, exam.examType);
+                                if (activeAttempt) {
+                                  readyAttempt = activeAttempt;
+                                  await loadUserData();
+                                }
+                              } catch (err) {
+                                console.error('Error fetching active attempt:', err);
+                              }
+                            }
+                            
+                            if (readyAttempt) {
+                              handleStartExam(readyAttempt.id);
+                            } else {
+                              showError('Exam attempt not found. Please refresh.');
+                            }
+                          }}
+                          className="w-full"
+                        >
+                          🚀 START TEST
+                        </Button>
+                      )}
+                      
+                      {status === 'in_progress' && attempt && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 text-xs bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2">
+                            <Clock className="w-3 h-3" />
+                            <span>Expires: {attempt.expires_at ? new Date(attempt.expires_at).toLocaleTimeString() : 'N/A'}</span>
+                          </div>
+                          <Button
+                            color="indigo"
+                            size="sm"
+                            onClick={() => navigate(`/${centerSlug}/exam/${attempt.id}`)}
+                            className="w-full"
+                          >
+                            Continue Exam →
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {status === 'submitted' && (
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
+                          <span className="text-green-800 dark:text-green-400 text-sm font-medium">
+                            ✅ Completed
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </main>
       </div>
-    </BackgroundMeteorsDots>
     );
   }
 
