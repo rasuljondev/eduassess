@@ -108,6 +108,7 @@ export const ApprovalManagement: React.FC = () => {
                 <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300">Student</th>
                 <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300">Login</th>
                 <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300">Exam Type</th>
+                <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300">Test Name</th>
                 <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300">Requested</th>
                 <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300">Status</th>
                 <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300">Actions</th>
@@ -117,13 +118,18 @@ export const ApprovalManagement: React.FC = () => {
               {requests.map((req) => (
                 <tr key={req.id} className="border-t border-gray-200 dark:border-gray-700">
                   <td className="py-3 px-4 text-gray-800 dark:text-gray-200">
-                    {req.user?.surname} {req.user?.name}
+                    {req.user?.surname && req.user?.name 
+                      ? `${req.user.surname} ${req.user.name}`
+                      : req.user?.name || req.user?.login || 'N/A'}
                   </td>
                   <td className="py-3 px-4 text-gray-600 dark:text-gray-400 font-mono">
-                    {req.user?.login}
+                    {req.user?.login || 'N/A'}
+                  </td>
+                  <td className="py-3 px-4 text-gray-800 dark:text-gray-200 uppercase">
+                    {req.exam_type || 'N/A'}
                   </td>
                   <td className="py-3 px-4 text-gray-800 dark:text-gray-200">
-                    {req.exam_type}
+                    {req.test?.name || (req.test_id ? `Test ID: ${req.test_id}` : 'Any Test')}
                   </td>
                   <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
                     {new Date(req.requested_at).toLocaleString()}

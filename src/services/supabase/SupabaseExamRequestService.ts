@@ -74,7 +74,13 @@ export class SupabaseExamRequestService implements ExamRequestService {
       return [];
     }
 
-    return data || [];
+    // Map Supabase join structure to our type structure
+    return (data || []).map((req: any) => ({
+      ...req,
+      user: req.global_users,
+      center: req.centers,
+      test: req.tests,
+    }));
   }
 
   async getUserRequestStatus(centerId: string, examType: string): Promise<ExamRequest | null> {
@@ -128,7 +134,13 @@ export class SupabaseExamRequestService implements ExamRequestService {
       return [];
     }
 
-    return data || [];
+    // Map Supabase join structure to our type structure
+    return (data || []).map((req: any) => ({
+      ...req,
+      user: req.global_users,
+      center: req.centers,
+      test: req.tests,
+    }));
   }
 
   async listAllRequests(centerId: string): Promise<ExamRequest[]> {
@@ -148,7 +160,13 @@ export class SupabaseExamRequestService implements ExamRequestService {
       return [];
     }
 
-    return data || [];
+    // Map Supabase join structure to our type structure
+    return (data || []).map((req: any) => ({
+      ...req,
+      user: req.global_users,
+      center: req.centers,
+      test: req.tests,
+    }));
   }
 
   async approveRequest(requestId: string): Promise<void> {
