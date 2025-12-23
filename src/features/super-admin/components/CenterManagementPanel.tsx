@@ -259,7 +259,7 @@ export const CenterManagementPanel: React.FC = () => {
               {showAdminForm && (
                 <AdminForm
                   adminId={editingAdmin?.id}
-                  initialData={editingAdmin ? { email: editingAdmin.email, fullName: editingAdmin.fullName } : undefined}
+                  initialData={editingAdmin ? { email: editingAdmin.email, fullName: editingAdmin.fullName, telegramId: editingAdmin.telegramId } : undefined}
                   onSubmit={editingAdmin ? handleUpdateAdmin : handleCreateAdmin}
                   onCancel={() => {
                     setShowAdminForm(false);

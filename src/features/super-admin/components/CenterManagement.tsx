@@ -115,6 +115,7 @@ interface AdminFormProps {
   initialData?: {
     email: string;
     fullName?: string;
+    telegramId?: number;
   };
   onSubmit: (data: CreateAdminData) => Promise<void>;
   onCancel: () => void;
@@ -129,6 +130,7 @@ export const AdminForm: React.FC<AdminFormProps> = ({
   const [email, setEmail] = useState(initialData?.email || '');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState(initialData?.fullName || '');
+  const [telegramId, setTelegramId] = useState(initialData?.telegramId?.toString() || '');
   const [loading, setLoading] = useState(false);
   const { showError, showSuccess } = useAlert();
 
@@ -147,12 +149,14 @@ export const AdminForm: React.FC<AdminFormProps> = ({
         email,
         password: password || undefined,
         fullName: fullName || undefined,
+        telegramId: telegramId ? parseInt(telegramId, 10) : undefined,
       } as CreateAdminData);
       showSuccess(adminId ? 'Admin updated successfully!' : 'Admin created successfully!');
       if (!adminId) {
         setEmail('');
         setPassword('');
         setFullName('');
+        setTelegramId('');
       }
     } catch (err: any) {
       showError(err.message || 'Failed to save admin');
@@ -202,6 +206,22 @@ export const AdminForm: React.FC<AdminFormProps> = ({
           placeholder="John Doe"
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
         />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Telegram ID (Optional)
+        </label>
+        <input
+          type="number"
+          value={telegramId}
+          onChange={e => setTelegramId(e.target.value)}
+          placeholder="123456789"
+          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+        />
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Optional: Telegram user ID for bot integration. Get it from @userinfobot on Telegram.
+        </p>
       </div>
 
       <div className="flex gap-3 justify-end pt-2">

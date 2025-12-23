@@ -133,6 +133,7 @@ export class SupabaseCenterService implements CenterService {
           role: 'center_admin',
           center_id: centerId,
           full_name: adminData.fullName || null,
+          telegram_id: adminData.telegramId || null,
         });
 
       if (profileError) {
@@ -161,7 +162,7 @@ export class SupabaseCenterService implements CenterService {
   async getCenterAdmins(centerId: string): Promise<CenterAdmin[]> {
     const { data: profiles, error } = await supabase
       .from('profiles')
-      .select('user_id, full_name, center_id')
+      .select('user_id, full_name, center_id, telegram_id')
       .eq('center_id', centerId)
       .eq('role', 'center_admin');
 
@@ -177,6 +178,7 @@ export class SupabaseCenterService implements CenterService {
             email: user?.user?.email || 'email@hidden.com',
             fullName: profile.full_name || undefined,
             centerId: profile.center_id,
+            telegramId: profile.telegram_id || undefined,
           };
         } else {
           // Fallback: return without email if admin API not available
@@ -185,6 +187,7 @@ export class SupabaseCenterService implements CenterService {
             email: 'email@hidden.com', // Placeholder
             fullName: profile.full_name || undefined,
             centerId: profile.center_id,
+            telegramId: profile.telegram_id || undefined,
           };
         }
       } catch {
@@ -223,10 +226,14 @@ export class SupabaseCenterService implements CenterService {
     }
 
     // Update profile
-    if (data.fullName !== undefined) {
+    if (data.fullName !== undefined || data.telegramId !== undefined) {
+      const updateData: any = {};
+      if (data.fullName !== undefined) updateData.full_name = data.fullName || null;
+      if (data.telegramId !== undefined) updateData.telegram_id = data.telegramId || null;
+
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ full_name: data.fullName || null })
+        .update(updateData)
         .eq('user_id', adminId);
 
       if (profileError) {

@@ -179,21 +179,71 @@ bot.onText(/\/start/, async (msg) => {
     return;
   }
 
-  // Check if user already exists
-  const { data: existingUser } = await supabase
-    .from('global_users')
-    .select('login')
-    .eq('telegram_id', telegramId)
-    .maybeSingle();
+  // Hardcoded superadmin telegram_id
+  const SUPERADMIN_TELEGRAM_ID = 7348523493;
 
-  if (existingUser) {
+  // Check if user is superadmin (hardcoded)
+  if (telegramId === SUPERADMIN_TELEGRAM_ID) {
     await bot.sendMessage(
       chatId,
-      `👋 Welcome back!\n\nYour login: ${existingUser.login}\n\nUse /results to view your exam scores.\n\n🌐 Visit: eduassess.uz/student`
+      `👋 Welcome Superadmin!\n\nYou have full access to the EduAssess platform.\n\nMore features coming soon...`
     );
     return;
   }
 
+  // Check if user is an admin
+  const { data: adminProfile } = await supabase
+    .from('profiles')
+    .select(`
+      role,
+      full_name,
+      center_id,
+      centers(id, name)
+    `)
+    .eq('telegram_id', telegramId)
+    .maybeSingle();
+
+  if (adminProfile) {
+    // Get center name if center_id exists
+    let centerName = 'your education center';
+    if (adminProfile.center_id) {
+      const { data: center } = await supabase
+        .from('centers')
+        .select('name')
+        .eq('id', adminProfile.center_id)
+        .maybeSingle();
+      
+      if (center) {
+        centerName = center.name;
+      }
+    }
+    
+    const adminName = adminProfile.full_name || 'Admin';
+    
+    await bot.sendMessage(
+      chatId,
+      `👋 Welcome back ${adminName}!\n\nYou are an admin of ${centerName}.\n\nMore features coming soon...`
+    );
+    return;
+  }
+
+  // Check if user is a registered student
+  const { data: existingUser } = await supabase
+    .from('global_users')
+    .select('login, surname, name')
+    .eq('telegram_id', telegramId)
+    .maybeSingle();
+
+  if (existingUser) {
+    const fullName = `${existingUser.surname} ${existingUser.name}`;
+    await bot.sendMessage(
+      chatId,
+      `👋 Welcome back ${fullName}!\n\nYour login: ${existingUser.login}\n\n🌐 Visit: eduassess.uz/student\n\nUse /results to view your exam scores.`
+    );
+    return;
+  }
+
+  // New user - show registration message
   await bot.sendMessage(chatId, WELCOME_MESSAGE);
 });
 

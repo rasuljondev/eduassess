@@ -58,28 +58,62 @@ serve(async (req) => {
 
     const authUserId = user.auth_user_id;
 
+    console.log(`[delete-student] User found: ${user_id}, auth_user_id: ${authUserId}`);
+
     // Delete in order (respecting foreign key constraints):
     // 1. Get submission IDs first
-    const { data: submissions } = await supabaseAdmin
+    const { data: submissions, error: submissionsFetchError } = await supabaseAdmin
       .from('submissions')
       .select('id')
       .eq('user_id', user_id);
 
-    const submissionIds = (submissions || []).map((s: any) => s.id);
+    if (submissionsFetchError) {
+      console.error('[delete-student] Error fetching submissions:', submissionsFetchError);
+    }
 
-    // 2. Delete scores (references submissions)
+    const submissionIds = (submissions || []).map((s: any) => s.id);
+    console.log(`[delete-student] Found ${submissionIds.length} submissions to delete`);
+
+    // 2. Delete scores by BOTH submission_id AND user_id (to catch all scores)
+    // Scores can be referenced by submission_id (primary key) or user_id (direct reference)
+    let scoresDeleted = 0;
+    
+    // Delete scores by submission_id
     if (submissionIds.length > 0) {
-      const { error: scoresError } = await supabaseAdmin
+      const { data: scoresBySubmission, error: scoresBySubError } = await supabaseAdmin
         .from('scores')
         .delete()
-        .in('submission_id', submissionIds);
+        .in('submission_id', submissionIds)
+        .select('submission_id');
 
-      if (scoresError) {
-        console.error('[delete-student] Error deleting scores:', scoresError);
+      if (scoresBySubError) {
+        console.error('[delete-student] Error deleting scores by submission_id:', scoresBySubError);
+      } else {
+        scoresDeleted += scoresBySubmission?.length || 0;
+        console.log(`[delete-student] Deleted ${scoresBySubmission?.length || 0} scores by submission_id`);
       }
     }
 
-    // 3. Submissions
+    // Delete scores by user_id (direct reference - catches any scores not linked via submissions)
+    const { data: scoresByUser, error: scoresByUserError } = await supabaseAdmin
+      .from('scores')
+      .delete()
+      .eq('user_id', user_id)
+      .select('submission_id');
+
+    if (scoresByUserError) {
+      console.error('[delete-student] Error deleting scores by user_id:', scoresByUserError);
+    } else {
+      const newScoresDeleted = scoresByUser?.length || 0;
+      if (newScoresDeleted > 0) {
+        scoresDeleted += newScoresDeleted;
+        console.log(`[delete-student] Deleted ${newScoresDeleted} additional scores by user_id`);
+      }
+    }
+
+    console.log(`[delete-student] Total scores deleted: ${scoresDeleted}`);
+
+    // 3. Delete submissions
     const { error: submissionsError } = await supabaseAdmin
       .from('submissions')
       .delete()
@@ -87,29 +121,40 @@ serve(async (req) => {
 
     if (submissionsError) {
       console.error('[delete-student] Error deleting submissions:', submissionsError);
+      throw new Error(`Failed to delete submissions: ${submissionsError.message}`);
+    } else {
+      console.log(`[delete-student] Deleted ${submissionIds.length} submissions`);
     }
 
     // 4. Exam attempts
-    const { error: attemptsError } = await supabaseAdmin
+    const { data: attempts, error: attemptsError } = await supabaseAdmin
       .from('exam_attempts')
       .delete()
-      .eq('user_id', user_id);
+      .eq('user_id', user_id)
+      .select('id');
 
     if (attemptsError) {
       console.error('[delete-student] Error deleting exam_attempts:', attemptsError);
+      throw new Error(`Failed to delete exam attempts: ${attemptsError.message}`);
+    } else {
+      console.log(`[delete-student] Deleted ${attempts?.length || 0} exam attempts`);
     }
 
     // 5. Exam requests
-    const { error: requestsError } = await supabaseAdmin
+    const { data: requests, error: requestsError } = await supabaseAdmin
       .from('exam_requests')
       .delete()
-      .eq('user_id', user_id);
+      .eq('user_id', user_id)
+      .select('id');
 
     if (requestsError) {
       console.error('[delete-student] Error deleting exam_requests:', requestsError);
+      throw new Error(`Failed to delete exam requests: ${requestsError.message}`);
+    } else {
+      console.log(`[delete-student] Deleted ${requests?.length || 0} exam requests`);
     }
 
-    // 6. Global user record
+    // 6. Global user record (delete last, after all related data)
     const { error: userDeleteError } = await supabaseAdmin
       .from('global_users')
       .delete()
@@ -119,7 +164,9 @@ serve(async (req) => {
       throw new Error(`Failed to delete user record: ${userDeleteError.message}`);
     }
 
-    // 7. Auth user (if exists)
+    console.log(`[delete-student] Deleted global_user record: ${user_id}`);
+
+    // 7. Auth user (if exists) - delete last
     if (authUserId) {
       try {
         await supabaseAdmin.auth.admin.deleteUser(authUserId);
@@ -131,9 +178,25 @@ serve(async (req) => {
     }
 
     console.log(`[delete-student] Successfully deleted user: ${user_id}`);
+    console.log(`[delete-student] Summary:
+      - Submissions: ${submissionIds.length}
+      - Scores: ${scoresDeleted}
+      - Exam Attempts: ${attempts?.length || 0}
+      - Exam Requests: ${requests?.length || 0}
+      - Global User: 1
+      - Auth User: ${authUserId ? 1 : 0}`);
 
     return new Response(
-      JSON.stringify({ success: true, message: 'User deleted successfully' }),
+      JSON.stringify({ 
+        success: true, 
+        message: 'User and all related data deleted successfully',
+        deleted: {
+          submissions: submissionIds.length,
+          scores: scoresDeleted,
+          exam_attempts: attempts?.length || 0,
+          exam_requests: requests?.length || 0,
+        }
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
   } catch (error) {

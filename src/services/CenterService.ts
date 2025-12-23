@@ -16,6 +16,7 @@ export interface CreateAdminData {
   email: string;
   password?: string; // Optional for updates, required for creation
   fullName?: string;
+  telegramId?: number; // Optional Telegram ID for bot integration
 }
 
 export interface CenterAdmin {
@@ -23,6 +24,7 @@ export interface CenterAdmin {
   email: string;
   fullName?: string;
   centerId: string;
+  telegramId?: number;
 }
 
 export interface CenterService {
