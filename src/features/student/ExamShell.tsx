@@ -208,12 +208,14 @@ export const ExamShell: React.FC = () => {
     if (!confirmed) return;
     
     setLoading(true);
+    // Optimistically stop timer and set submitted to avoid showing timer during API call
+    setTimeRemaining(null);
+    
     try {
       await examAttemptService.submitAttempt(attemptId, answers);
       
       // Update local state immediately
       setSubmitted(true);
-      setTimeRemaining(null); // Stop timer
       if (attempt) {
         setAttempt({ ...attempt, status: 'submitted' });
       }
@@ -225,6 +227,13 @@ export const ExamShell: React.FC = () => {
         navigate('/student');
       }, 3000);
     } catch (err: any) {
+      // Re-enable timer if submission failed
+      if (attempt?.expires_at) {
+        const expiresAt = new Date(attempt.expires_at!);
+        const now = new Date();
+        const remaining = expiresAt.getTime() - now.getTime();
+        if (remaining > 0) setTimeRemaining(remaining);
+      }
       showError(err.message || 'Failed to submit test');
     } finally {
       setLoading(false);

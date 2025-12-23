@@ -506,7 +506,20 @@ WITH CHECK (
   OR public.is_superadmin()
 );
 
--- Exam Attempts: Students can read own, admins can read their center's, no client write
+DROP POLICY IF EXISTS "requests_admin_delete" ON public.exam_requests;
+CREATE POLICY "requests_admin_delete"
+ON public.exam_requests FOR DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles p
+    WHERE p.user_id = auth.uid()
+    AND p.center_id = exam_requests.center_id
+    AND p.role = 'center_admin'
+  )
+  OR public.is_superadmin()
+);
+
+-- Exam Attempts: Students can read/update own, admins can read their center's
 DROP POLICY IF EXISTS "attempts_self_read" ON public.exam_attempts;
 CREATE POLICY "attempts_self_read"
 ON public.exam_attempts FOR SELECT
@@ -518,9 +531,27 @@ USING (
   )
 );
 
-DROP POLICY IF EXISTS "attempts_admin_read" ON public.exam_attempts;
-CREATE POLICY "attempts_admin_read"
-ON public.exam_attempts FOR SELECT
+DROP POLICY IF EXISTS "attempts_student_update" ON public.exam_attempts;
+CREATE POLICY "attempts_student_update"
+ON public.exam_attempts FOR UPDATE
+USING (
+  EXISTS (
+    SELECT 1 FROM public.global_users u
+    WHERE u.id = exam_attempts.user_id
+    AND u.auth_user_id = auth.uid()
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.global_users u
+    WHERE u.id = exam_attempts.user_id
+    AND u.auth_user_id = auth.uid()
+  )
+);
+
+DROP POLICY IF EXISTS "attempts_admin_all" ON public.exam_attempts;
+CREATE POLICY "attempts_admin_all"
+ON public.exam_attempts FOR ALL
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles p
@@ -531,81 +562,34 @@ USING (
   OR public.is_superadmin()
 );
 
-DROP POLICY IF EXISTS "attempts_no_client_write" ON public.exam_attempts;
-CREATE POLICY "attempts_no_client_write"
-ON public.exam_attempts FOR ALL
-USING (false)
-WITH CHECK (false);
-
--- Submissions: Students can insert/read own, admins can read/update their center's
-DROP POLICY IF EXISTS "submissions_student_insert_active" ON public.submissions;
+-- Submissions: Students can insert/read own, admins can read/update/delete their center's
 DROP POLICY IF EXISTS "submissions_student_insert" ON public.submissions;
-DROP POLICY IF EXISTS "submissions_student_insert_v2" ON public.submissions;
-DROP POLICY IF EXISTS "submissions_student_read" ON public.submissions;
-DROP POLICY IF EXISTS "submissions_student_read_v2" ON public.submissions;
-DROP POLICY IF EXISTS "submissions_center_admin_read" ON public.submissions;
-DROP POLICY IF EXISTS "submissions_center_admin_update" ON public.submissions;
-DROP POLICY IF EXISTS "submissions_superadmin_read" ON public.submissions;
-DROP POLICY IF EXISTS "submissions_no_student_update" ON public.submissions;
-DROP POLICY IF EXISTS "submissions_no_student_delete" ON public.submissions;
-
--- Students can insert their own submissions (via exam_attempts)
 CREATE POLICY "submissions_student_insert"
 ON public.submissions FOR INSERT
 WITH CHECK (
   EXISTS (
     SELECT 1
-    FROM public.global_users gu
-    JOIN public.exam_attempts ea ON ea.user_id = gu.id
-    WHERE gu.auth_user_id = auth.uid()
-      AND gu.id = submissions.user_id
-      AND ea.center_id = submissions.center_id
-      AND ea.test_id = submissions.test_id
-      AND ea.status = 'in_progress'
-      AND (ea.expires_at IS NULL OR ea.expires_at > now())
-      AND ea.submission_id IS NULL
+    FROM public.global_users u
+    WHERE u.id = submissions.user_id
+      AND u.auth_user_id = auth.uid()
   )
 );
 
--- Students can read their own submissions
+DROP POLICY IF EXISTS "submissions_student_read" ON public.submissions;
 CREATE POLICY "submissions_student_read"
 ON public.submissions FOR SELECT
 USING (
   EXISTS (
     SELECT 1
-    FROM public.global_users gu
-    WHERE gu.auth_user_id = auth.uid()
-      AND gu.id = submissions.user_id
-  )
-);
-
--- Students can insert their own submissions (v2 - simpler version)
-CREATE POLICY "submissions_student_insert_v2"
-ON public.submissions FOR INSERT
-WITH CHECK (
-  EXISTS (
-    SELECT 1
     FROM public.global_users u
     WHERE u.id = submissions.user_id
       AND u.auth_user_id = auth.uid()
   )
 );
 
--- Students can read their own submissions (v2 - simpler version)
-CREATE POLICY "submissions_student_read_v2"
-ON public.submissions FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1
-    FROM public.global_users u
-    WHERE u.id = submissions.user_id
-      AND u.auth_user_id = auth.uid()
-  )
-);
-
--- Center admins can view submissions for their center
-CREATE POLICY "submissions_center_admin_read"
-ON public.submissions FOR SELECT
+DROP POLICY IF EXISTS "submissions_admin_all" ON public.submissions;
+CREATE POLICY "submissions_admin_all"
+ON public.submissions FOR ALL
 USING (
   EXISTS (
     SELECT 1 FROM public.profiles p
@@ -613,32 +597,8 @@ USING (
     AND p.center_id = submissions.center_id
     AND p.role = 'center_admin'
   )
+  OR public.is_superadmin()
 );
-
--- Center admins can update grading status for their center's submissions
-CREATE POLICY "submissions_center_admin_update"
-ON public.submissions FOR UPDATE
-USING (
-  EXISTS (
-    SELECT 1 FROM public.profiles p
-    WHERE p.user_id = auth.uid()
-    AND p.center_id = submissions.center_id
-    AND p.role = 'center_admin'
-  )
-)
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM public.profiles p
-    WHERE p.user_id = auth.uid()
-    AND p.center_id = submissions.center_id
-    AND p.role = 'center_admin'
-  )
-);
-
--- Super admins can read all submissions
-CREATE POLICY "submissions_superadmin_read"
-ON public.submissions FOR SELECT
-USING (public.is_superadmin());
 
 -- Scores: Students can read published own, admins can manage their center's
 DROP POLICY IF EXISTS "scores_center_admin_manage" ON public.scores;

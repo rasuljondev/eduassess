@@ -191,7 +191,7 @@ curl -i --location --request POST 'http://localhost:54321/functions/v1/register-
 
 ```bash
 # Set individual secret
-supabase secrets set TELEGRAM_BOT_TOKEN=your_token_here
+supabase secrets set BOT_WEBHOOK_URL=https://eduassess.uz/notify
 
 # Set multiple secrets from .env file
 supabase secrets set --env-file .env.production
@@ -262,9 +262,11 @@ D:\Projects\exam\
 ├── supabase/
 │   ├── functions/           # Edge Functions
 │   │   ├── register-student/
-│   │   │   └── index.ts
+│   │   ├── create-exam-request/
 │   │   ├── approve-exam-request/
-│   │   └── ...
+│   │   ├── start-exam-attempt/
+│   │   ├── cleanup-expired-attempts/
+│   │   └── notify-score/
 │   └── migrations/          # Migration files
 │       ├── 20241220_create_global_users.sql
 │       └── ...
@@ -309,26 +311,6 @@ supabase functions deploy register-student
 supabase functions logs register-student --follow
 ```
 
-### 3. Backup Before Major Changes
-
-```bash
-# Full backup
-supabase db dump -f backup_$(date +%Y%m%d_%H%M%S).sql
-
-# Verify backup
-ls -lh backup_*.sql
-```
-
-### 4. Rollback Migration
-
-```bash
-# If migration failed, restore from backup
-supabase db execute < backup_20241220_120000.sql
-
-# Or revert specific migration
-supabase migration repair {timestamp}
-```
-
 ---
 
 ## Credentials Location
@@ -344,35 +326,6 @@ supabase migration repair {timestamp}
 - Created by: `supabase login`
 - Used when no project-specific token exists
 
-### Project Configuration
-**Path**: `D:\Projects\exam\.supabase\config.toml`
-
-**Contains**:
-- Project reference ID: `exnfvzzoxprgrzgkylnl`
-- Database connection details
-- API URLs
-
-**Partial Git Ignore**: Add `.supabase/` to `.gitignore` except `config.toml` if needed for team
-
-### Environment Variables
-**Path**: `D:\Projects\exam\.env` (EXISTING FILE)
-
-```env
-# Supabase (Already configured)
-SUPABASE_ACCESS_TOKEN=your_access_token_here
-SUPABASE_URL=https://exnfvzzoxprgrzgkylnl.supabase.co
-SUPABASE_ANON_KEY=your_anon_key_here
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-
-# Telegram Bot
-BOT_TOKEN=your_telegram_bot_token
-
-# Fixed password for students
-FIXED_STUDENT_PASSWORD=exam2024
-```
-
-**Project Dashboard**: https://supabase.com/dashboard/project/exnfvzzoxprgrzgkylnl
-
 ---
 
 ## Troubleshooting
@@ -383,63 +336,8 @@ FIXED_STUDENT_PASSWORD=exam2024
 supabase projects list
 
 # Re-link
-supabase link --project-ref YOUR_PROJECT_REF
+supabase link --project-ref exnfvzzoxprgrzgkylnl
 ```
-
-### Issue: "Permission denied"
-```bash
-# Check you're logged in
-supabase status
-
-# Re-login
-supabase logout
-supabase login
-```
-
-### Issue: Migration fails
-```bash
-# Check migration status
-supabase migration list
-
-# Repair migration (mark as applied)
-supabase migration repair {timestamp}
-
-# Or reset and re-apply
-supabase db reset
-supabase db push
-```
-
-### Issue: Edge Function not deploying
-```bash
-# Check function syntax
-deno check supabase/functions/your-function/index.ts
-
-# Check logs for errors
-supabase functions logs your-function
-
-# Redeploy with verbose output
-supabase functions deploy your-function --debug
-```
-
----
-
-## Security Best Practices
-
-1. **Never commit secrets**:
-   ```bash
-   # Add to .gitignore
-   echo ".supabase/" >> .gitignore
-   echo ".env.local" >> .gitignore
-   echo "access-token" >> .gitignore
-   ```
-
-2. **Use service role key only in Edge Functions**: Never expose it in frontend code
-
-3. **Rotate keys if compromised**: Dashboard → Settings → API → Regenerate keys
-
-4. **Set Row Level Security (RLS)**: Always enable RLS on new tables
-
-5. **Test migrations locally first**: Use `supabase db reset` to test migrations before applying to production
 
 ---
 
@@ -448,16 +346,11 @@ supabase functions deploy your-function --debug
 | Task | Command |
 |------|---------|
 | Login | `supabase login` |
-| Link project | `supabase link --project-ref ID` |
+| Link project | `supabase link --project-ref exnfvzzoxprgrzgkylnl` |
 | Status | `supabase status` |
-| Create migration | `supabase migration new NAME` |
 | Apply migrations | `supabase db push` |
-| Dump database | `supabase db dump -f backup.sql` |
 | Deploy all functions | `supabase functions deploy` |
-| Deploy one function | `supabase functions deploy NAME` |
-| View logs | `supabase functions logs --follow` |
 | Set secret | `supabase secrets set KEY=VALUE` |
-| List secrets | `supabase secrets list` |
 
 ---
 
@@ -470,7 +363,6 @@ supabase link --project-ref exnfvzzoxprgrzgkylnl
 ```
 
 ### 2. Apply New Architecture Migration
-
 **Option A: Direct SQL Execution** (Recommended)
 ```bash
 # Run the comprehensive migration file
@@ -489,21 +381,8 @@ supabase db execute < migration_new_architecture.sql
 - ✅ Sets up all RLS policies
 - ✅ Creates helper functions and analytics views
 
-### 3. Implement Edge Functions
-Create these functions:
-- `register-student`
-- `create-exam-request`
-- `approve-exam-request`
-- `start-exam-attempt`
-- `cleanup-expired-attempts`
-- `notify-score` (notifies students via Telegram when scores are published)
-
-### 4. Deploy and test
+### 3. Deploy and test
 ```bash
-# Make sure you're linked first
-cd D:\Projects\exam
-supabase link --project-ref exnfvzzoxprgrzgkylnl
-
 # Deploy all functions individually
 supabase functions deploy register-student
 supabase functions deploy create-exam-request
@@ -511,36 +390,14 @@ supabase functions deploy approve-exam-request
 supabase functions deploy start-exam-attempt
 supabase functions deploy cleanup-expired-attempts
 supabase functions deploy notify-score
-
-# Watch logs
-supabase functions logs --follow
-
-# Test specific function
-supabase functions logs register-student
 ```
 
-### 5. Set production secrets
+### 4. Set production secrets
 ```bash
-supabase secrets set TELEGRAM_BOT_TOKEN=your_bot_token
+supabase secrets set BOT_WEBHOOK_URL=https://eduassess.uz/notify
 supabase secrets set FIXED_PASSWORD=exam2024
-supabase secrets set BOT_WEBHOOK_URL=http://your-bot-server:3001
 ```
-
-**Note**: `BOT_WEBHOOK_URL` is required for the `notify-score` function to send Telegram notifications when scores are published.
-
-### 6. Verify deployment
-Check dashboard: https://supabase.com/dashboard/project/exnfvzzoxprgrzgkylnl
-
----
-
-## Additional Resources
-
-- **Official Docs**: https://supabase.com/docs/guides/cli
-- **Edge Functions Guide**: https://supabase.com/docs/guides/functions
-- **Migrations Guide**: https://supabase.com/docs/guides/cli/local-development#database-migrations
-- **GitHub**: https://github.com/supabase/cli
 
 ---
 
 **Last Updated**: December 23, 2024
-

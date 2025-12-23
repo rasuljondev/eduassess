@@ -197,13 +197,18 @@ export class SupabaseExamAttemptService implements ExamAttemptService {
     }
 
     // Update attempt status
-    await supabase
+    const { error: updateError } = await supabase
       .from('exam_attempts')
       .update({
         status: 'submitted',
         submission_id: submission.id,
       })
       .eq('id', attemptId);
+
+    if (updateError) {
+      console.error('[SupabaseExamAttemptService] Error updating attempt status:', updateError);
+      throw new Error(`Failed to update exam status: ${updateError.message}`);
+    }
 
     return submission;
   }

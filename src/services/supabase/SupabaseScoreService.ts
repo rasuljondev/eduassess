@@ -192,19 +192,16 @@ export class SupabaseScoreService implements ScoreService {
         console.error('Failed to delete attempt:', deleteAttemptError);
       }
 
-      // Reset the exam request so the student can request/start again
+      // Reset the exam request: DELETE it so the student sees "Request Access" again
+      // (like they never took the test)
       if (attempt.exam_request_id) {
-        const { error: updateRequestError } = await supabase
+        const { error: deleteRequestError } = await supabase
           .from('exam_requests')
-          .update({
-            status: 'approved', // Reset to approved so they can start a fresh attempt
-            reviewed_at: null,
-            reviewed_by: null,
-          })
+          .delete()
           .eq('id', attempt.exam_request_id);
 
-        if (updateRequestError) {
-          console.error('Failed to reset exam request:', updateRequestError);
+        if (deleteRequestError) {
+          console.error('Failed to delete exam request:', deleteRequestError);
         }
       }
     }
