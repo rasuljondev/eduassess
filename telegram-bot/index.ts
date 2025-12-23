@@ -46,7 +46,7 @@ To create your account or link your existing account, please send your informati
 Surname Name Phone
 
 📝 Example:
-Karimov Javohir +998901234567
+Karimov Javohir 901234567
 
 After registration, you'll receive your login credentials to access exams on our website.
 🌐 Visit: eduassess.uz/student`;
@@ -264,7 +264,7 @@ bot.on('message', async (msg) => {
   if (!userData) {
     await bot.sendMessage(
       chatId,
-      `❌ Invalid format. Please send your information like this:\n\nSurname Name Phone\n\nExample:\nKarimov Javohir +998901234567`
+      `❌ Invalid format. Please send your information like this:\n\nSurname Name Phone\n\nExample:\nKarimov Javohir 901234567`
     );
     return;
   }

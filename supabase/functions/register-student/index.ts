@@ -17,14 +17,47 @@ interface RegisterRequest {
   telegram_username?: string;
 }
 
-// Generate login from name + phone_number (e.g., "rasuljon2200880")
-function generateLogin(name: string, phone_number: string): string {
-  // Remove spaces and special characters from name and phone
-  const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const cleanPhone = phone_number.replace(/[^0-9]/g, '');
+// Normalize phone number: accept 992200880, save as +998992200880
+function normalizePhoneNumber(phone: string): string {
+  // Remove all non-digits
+  const digits = phone.replace(/[^0-9]/g, '');
   
-  // Combine: name + phone
-  return `${cleanName}${cleanPhone}`;
+  // If starts with 998, assume it's already with country code
+  if (digits.startsWith('998')) {
+    return `+${digits}`;
+  }
+  
+  // If starts with 9 (Uzbek mobile), add +998
+  if (digits.startsWith('9') && digits.length >= 9) {
+    return `+998${digits}`;
+  }
+  
+  // Otherwise, assume it's already formatted or add +998
+  return digits.startsWith('+') ? digits : `+998${digits}`;
+}
+
+// Extract phone without country code for login generation (e.g., "992200880" -> "992200880")
+function getPhoneWithoutCountryCode(phone: string): string {
+  const digits = phone.replace(/[^0-9]/g, '');
+  
+  // Remove 998 prefix if present
+  if (digits.startsWith('998')) {
+    return digits.substring(3);
+  }
+  
+  return digits;
+}
+
+// Generate login from name + phone_number without country code (e.g., "javohir901234567")
+function generateLogin(name: string, phone_number: string): string {
+  // Remove spaces and special characters from name
+  const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  
+  // Get phone without country code
+  const phoneWithoutCountry = getPhoneWithoutCountryCode(phone_number);
+  
+  // Combine: name + phone (without country code)
+  return `${cleanName}${phoneWithoutCountry}`;
 }
 
 // Check if login already exists and generate unique one if needed
@@ -68,7 +101,13 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const fixedPassword = Deno.env.get('FIXED_STUDENT_PASSWORD') ?? '12345678';
 
+    console.log('[register-student] Starting registration request');
+    console.log('[register-student] Supabase URL:', supabaseUrl ? 'Set' : 'Missing');
+    console.log('[register-student] Service Key:', supabaseServiceKey ? 'Set' : 'Missing');
+    console.log('[register-student] Fixed Password:', fixedPassword ? 'Set' : 'Missing');
+
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[register-student] Missing Supabase environment variables');
       throw new Error('Missing Supabase environment variables');
     }
 
@@ -79,10 +118,23 @@ serve(async (req) => {
 
     // Parse request body
     const body: RegisterRequest = await req.json();
-    const { surname, name, phone_number, telegram_id, telegram_username } = body;
+    console.log('[register-student] Request body received:', {
+      surname: body.surname,
+      name: body.name,
+      phone_number: body.phone_number,
+      has_telegram_id: !!body.telegram_id,
+    });
+
+    // Normalize phone number (accept 992200880, save as +998992200880)
+    const normalizedPhone = normalizePhoneNumber(body.phone_number);
+    console.log('[register-student] Phone normalized:', body.phone_number, '->', normalizedPhone);
+
+    const { surname, name, phone_number: originalPhone, telegram_id, telegram_username } = body;
+    const phone_number = normalizedPhone;
 
     // Validate input
     if (!surname || !name || !phone_number) {
+      console.error('[register-student] Validation failed:', { surname, name, phone_number });
       return new Response(
         JSON.stringify({ error: 'surname, name, and phone_number are required' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
@@ -90,16 +142,21 @@ serve(async (req) => {
     }
 
     // Check if user already exists (by surname + name + phone)
+    // Note: phone_number in DB is stored as +998992200880, so we need to check both formats
+    console.log('[register-student] Checking for existing user:', { surname, name, phone_number });
     const { data: existingUsers, error: searchError } = await supabaseAdmin
       .from('global_users')
       .select('*')
       .eq('surname', surname)
       .eq('name', name)
-      .eq('phone_number', phone_number);
+      .or(`phone_number.eq.${phone_number},phone_number.eq.${originalPhone}`);
 
     if (searchError) {
+      console.error('[register-student] Database search error:', searchError);
       throw new Error(`Database search failed: ${searchError.message}`);
     }
+
+    console.log('[register-student] Existing users found:', existingUsers?.length || 0);
 
     // Case 1: User exists and already has telegram linked
     if (existingUsers && existingUsers.length > 0) {
@@ -159,9 +216,12 @@ serve(async (req) => {
     }
 
     // Case 4: New user - create account
-    const baseLogin = generateLogin(name, phone_number);
+    const baseLogin = generateLogin(name, originalPhone); // Use original phone (without country code) for login
+    console.log('[register-student] Generated base login:', baseLogin);
     const login = await ensureUniqueLogin(supabaseAdmin, baseLogin);
+    console.log('[register-student] Final login (after uniqueness check):', login);
     const email = `${login}@temp.exam.uz`;
+    console.log('[register-student] Creating auth user with email:', email);
 
     // Create auth user
     const { data: newUser, error: createAuthError } = await supabaseAdmin.auth.admin.createUser({
@@ -178,10 +238,21 @@ serve(async (req) => {
     });
 
     if (createAuthError || !newUser.user) {
+      console.error('[register-student] Failed to create auth user:', createAuthError);
       throw new Error(`Failed to create auth user: ${createAuthError?.message}`);
     }
 
+    console.log('[register-student] Auth user created:', newUser.user.id);
+
     // Insert into global_users table
+    console.log('[register-student] Inserting into global_users:', {
+      login,
+      surname,
+      name,
+      phone_number,
+      has_telegram_id: !!telegram_id,
+    });
+
     const { error: insertError } = await supabaseAdmin.from('global_users').insert({
       login,
       surname,
@@ -193,15 +264,18 @@ serve(async (req) => {
     });
 
     if (insertError) {
+      console.error('[register-student] Failed to insert into global_users:', insertError);
       // Rollback: delete auth user
       try {
         await supabaseAdmin.auth.admin.deleteUser(newUser.user.id);
-      } catch {
-        // Ignore rollback errors
+        console.log('[register-student] Rolled back auth user');
+      } catch (rollbackError) {
+        console.error('[register-student] Rollback failed:', rollbackError);
       }
       throw new Error(`Failed to create user record: ${insertError.message}`);
     }
 
+    console.log('[register-student] Successfully created user:', login);
     return new Response(
       JSON.stringify({
         success: true,
@@ -214,7 +288,8 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 201 }
     );
   } catch (error) {
-    console.error('Error in register-student:', error);
+    console.error('[register-student] Error:', error);
+    console.error('[register-student] Error stack:', (error as Error).stack);
     return new Response(
       JSON.stringify({ error: (error as Error).message || 'Unknown error' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }

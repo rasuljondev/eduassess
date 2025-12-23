@@ -2,7 +2,7 @@ import type { AuthService } from '../AuthService';
 import type { User } from '../../types';
 import { supabase } from '../../lib/supabase';
 
-const FIXED_PASSWORD = 'exam2024'; // Fixed password for all students
+const FIXED_PASSWORD = '12345678'; // Fixed password for all students
 
 export class SupabaseAuthService implements AuthService {
   async login(loginOrEmail: string, password?: string): Promise<User> {
