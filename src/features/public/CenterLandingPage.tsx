@@ -5,7 +5,7 @@ import type { Center, ExamAttempt, ExamRequest } from '../../types';
 import { useAuthStore } from '../../stores/auth.store';
 import { BackgroundMeteorsDots } from '../../shared/ui/background-meteors-dots';
 import { Button } from '../../shared/ui/Button';
-import { Shield, AlertCircle, Sun, Moon, Clock, LogIn } from 'lucide-react';
+import { Shield, AlertCircle, Sun, Moon, Clock, LogIn, LogOut } from 'lucide-react';
 import { useAlert } from '../../shared/ui/AlertProvider';
 import { SupabaseExamRequestService } from '../../services/supabase/SupabaseExamRequestService';
 import { SupabaseExamAttemptService } from '../../services/supabase/SupabaseExamAttemptService';
@@ -80,12 +80,23 @@ export const CenterLandingPage: React.FC = () => {
       setCenter(centerData);
       
       // Load available exams (tests) for this center
-      const { data: tests } = await supabase
+      const { data: tests, error: testsError } = await supabase
         .from('tests')
         .select('*')
         .eq('center_id', centerData.id);
       
-      setExams(tests || []);
+      if (testsError) {
+        console.error('Error loading tests:', testsError);
+      }
+      
+      // Map database fields (exam_type) to frontend format (examType)
+      const mappedTests = (tests || []).map((test: any) => ({
+        ...test,
+        examType: test.exam_type, // Map snake_case to camelCase
+      }));
+      
+      console.log('Loaded exams:', mappedTests);
+      setExams(mappedTests);
     } catch (err) {
       console.error('Failed to fetch center:', err);
       showError('Center not found');
@@ -219,8 +230,21 @@ export const CenterLandingPage: React.FC = () => {
   if (user && user.role === 'STUDENT') {
       return (
       <BackgroundMeteorsDots className="min-h-screen p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-indigo-900/20 dark:to-purple-900/20 transition-colors duration-300">
-      {/* Dark Mode Toggle */}
-      <div className="fixed top-6 right-6 z-50">
+      {/* Logout & Dark Mode Toggle */}
+      <div className="fixed top-6 right-6 z-50 flex items-center gap-3">
+        <Button
+          color="gray"
+          size="sm"
+          onClick={async () => {
+            const { logout } = useAuthStore.getState();
+            logout();
+            navigate('/');
+          }}
+          leftIcon={<LogOut className="w-4 h-4" />}
+          customClassName="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 shadow-xl"
+        >
+          Logout
+        </Button>
         <button
           type="button"
           onClick={() => setIsDarkMode(!isDarkMode)}
