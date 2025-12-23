@@ -16,6 +16,7 @@ import { ApprovalManagement } from '../features/center-admin/ApprovalManagement'
 import { SuperDashboard } from '../features/super-admin/SuperDashboard';
 import { AnalyticsView } from '../features/super-admin/AnalyticsView';
 import { CenterManagementView } from '../features/super-admin/CenterManagementView';
+import { StudentManagementView } from '../features/super-admin/StudentManagementView';
 
 export const router = createBrowserRouter([
   {
@@ -85,6 +86,10 @@ export const router = createBrowserRouter([
       {
         path: 'centers',
         element: <CenterManagementView />,
+      },
+      {
+        path: 'students',
+        element: <StudentManagementView />,
       }
     ]
   },

@@ -68,5 +68,43 @@ export class SupabaseGlobalUserService implements GlobalUserService {
 
     return data || [];
   }
+
+  async listAllUsers(limit = 50, offset = 0): Promise<{ users: GlobalUser[]; total: number }> {
+    // Get total count
+    const { count, error: countError } = await supabase
+      .from('global_users')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      throw new Error(countError.message || 'Failed to count users');
+    }
+
+    // Get users with pagination
+    const { data, error } = await supabase
+      .from('global_users')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      throw new Error(error.message || 'Failed to fetch users');
+    }
+
+    return {
+      users: data || [],
+      total: count || 0,
+    };
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    // Call Edge Function for safe deletion (handles cascading)
+    const { error } = await supabase.functions.invoke('delete-student', {
+      body: { user_id: userId },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to delete user');
+    }
+  }
 }
 

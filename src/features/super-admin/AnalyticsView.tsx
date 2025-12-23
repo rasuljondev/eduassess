@@ -182,7 +182,7 @@ export const AnalyticsView: React.FC = () => {
     <div className="space-y-8">
       {/* Platform Summary - Top row 3 cards (Totals) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Total Generated */}
+        {/* Total Requests */}
         <div className="bg-gradient-to-br from-white to-purple-50 dark:from-gray-800 dark:to-purple-900/20 p-6 rounded-2xl border border-purple-100 dark:border-purple-800 shadow-lg">
           <div className="flex items-start justify-between mb-4">
             <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
@@ -194,11 +194,11 @@ export const AnalyticsView: React.FC = () => {
           </div>
           <div>
             <p className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-1">{summaryStats.totalGenerated.toLocaleString()}</p>
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Generated</h3>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Exam Requests</h3>
           </div>
         </div>
 
-        {/* Total Taken */}
+        {/* Total Started */}
         <div className="bg-gradient-to-br from-white to-emerald-50 dark:from-gray-800 dark:to-emerald-900/20 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-800 shadow-lg">
           <div className="flex items-start justify-between mb-4">
             <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg">
@@ -210,11 +210,11 @@ export const AnalyticsView: React.FC = () => {
           </div>
           <div>
             <p className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-1">{summaryStats.totalTaken.toLocaleString()}</p>
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Taken</h3>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Started</h3>
           </div>
         </div>
 
-        {/* Total Not Used */}
+        {/* Total Expired */}
         <div className="bg-gradient-to-br from-white to-rose-50 dark:from-gray-800 dark:to-rose-900/20 p-6 rounded-2xl border border-rose-100 dark:border-rose-800 shadow-lg">
           <div className="flex items-start justify-between mb-4">
             <div className="p-3 rounded-xl bg-gradient-to-br from-rose-500 to-red-500 shadow-lg">
@@ -226,7 +226,7 @@ export const AnalyticsView: React.FC = () => {
           </div>
           <div>
             <p className="text-4xl font-bold text-gray-800 dark:text-gray-100 mb-1">{summaryStats.totalNotUsed.toLocaleString()}</p>
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Not Used</h3>
+            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Expired</h3>
           </div>
         </div>
       </div>
@@ -236,7 +236,7 @@ export const AnalyticsView: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between">
           <div className="flex items-center gap-3 mb-4 text-purple-500">
             <Activity className="w-5 h-5" />
-            <h3 className="font-bold text-gray-800 dark:text-gray-100">Today's Generation</h3>
+            <h3 className="font-bold text-gray-800 dark:text-gray-100">Today's Requests</h3>
           </div>
           <div className="flex items-end justify-between">
             <p className="text-3xl font-black text-gray-900 dark:text-gray-50">+{summaryStats.dailyGenerated}</p>
@@ -247,7 +247,7 @@ export const AnalyticsView: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between">
           <div className="flex items-center gap-3 mb-4 text-emerald-500">
             <CheckSquare className="w-5 h-5" />
-            <h3 className="font-bold text-gray-800 dark:text-gray-100">Today's Usage</h3>
+            <h3 className="font-bold text-gray-800 dark:text-gray-100">Today's Started</h3>
           </div>
           <div className="flex items-end justify-between">
             <p className="text-3xl font-black text-gray-900 dark:text-gray-50">+{summaryStats.dailyTaken}</p>

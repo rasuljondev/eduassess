@@ -14,10 +14,12 @@ import { MockQuestionService } from './mocks/MockQuestionService';
 import { SupabaseTestService } from './supabase/SupabaseTestService';
 import { SupabaseQuestionService } from './supabase/SupabaseQuestionService';
 import { SupabaseScoreService } from './supabase/SupabaseScoreService';
+import { SupabaseGlobalUserService } from './supabase/SupabaseGlobalUserService';
 
 // Use Supabase for auth, centers, and user generation; mocks for the rest
 export const authService = new SupabaseAuthService();
 export const centerService = new SupabaseCenterService();
+export const globalUserService = new SupabaseGlobalUserService();
 
 export const submissionService = new SupabaseSubmissionService();
 export const analyticsService = new SupabaseAnalyticsService();

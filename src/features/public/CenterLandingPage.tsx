@@ -56,6 +56,13 @@ export const CenterLandingPage: React.FC = () => {
     }
   }, [user, center]);
 
+  // Reload exams when user logs in
+  useEffect(() => {
+    if (user && center && exams.length === 0) {
+      loadCenterData();
+    }
+  }, [user, center]);
+
   // Manage dark mode
   useEffect(() => {
     const root = document.documentElement;
@@ -86,7 +93,8 @@ export const CenterLandingPage: React.FC = () => {
         .eq('center_id', centerData.id);
       
       if (testsError) {
-        console.error('Error loading tests:', testsError);
+        console.error('[CenterLandingPage] Error loading tests:', testsError);
+        showError(`Failed to load tests: ${testsError.message}`);
       }
       
       // Map database fields (exam_type) to frontend format (examType)
@@ -95,7 +103,17 @@ export const CenterLandingPage: React.FC = () => {
         examType: test.exam_type, // Map snake_case to camelCase
       }));
       
-      console.log('Loaded exams:', mappedTests);
+      console.log('[CenterLandingPage] Loaded exams:', {
+        count: mappedTests.length,
+        exams: mappedTests,
+        centerId: centerData.id,
+        centerSlug: centerData.slug,
+      });
+      
+      if (mappedTests.length === 0) {
+        console.warn('[CenterLandingPage] No tests found for center:', centerData.name);
+      }
+      
       setExams(mappedTests);
     } catch (err) {
       console.error('Failed to fetch center:', err);
@@ -106,16 +124,20 @@ export const CenterLandingPage: React.FC = () => {
   };
 
   const loadUserData = async () => {
-    if (!center) return;
+    if (!center || !user) return;
     
     try {
+      console.log('[CenterLandingPage] Loading user data for center:', center.id);
       const attempts = await examAttemptService.getUserAttempts(center.id);
+      console.log('[CenterLandingPage] Loaded attempts:', attempts);
       setUserAttempts(attempts);
       
       const requests = await examRequestService.getUserRequests(center.id);
+      console.log('[CenterLandingPage] Loaded requests:', requests);
       setUserRequests(requests);
-    } catch (err) {
-      console.error('Error loading user data:', err);
+    } catch (err: any) {
+      console.error('[CenterLandingPage] Error loading user data:', err);
+      showError(`Failed to load user data: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -124,15 +146,18 @@ export const CenterLandingPage: React.FC = () => {
     
     setLoading(true);
     try {
+      console.log('[CenterLandingPage] Creating exam request:', { center_id: center.id, exam_type: examType, test_id: testId });
       await examRequestService.createRequest({
         center_id: center.id,
         exam_type: examType,
         test_id: testId,
       });
       showSuccess('Exam request submitted! Waiting for admin approval.');
+      // Reload user data to update UI
       await loadUserData();
     } catch (err: any) {
-      showError(err.message || 'Failed to register for exam');
+      console.error('[CenterLandingPage] Error creating request:', err);
+      showError(err.message || 'Failed to request exam');
     } finally {
       setLoading(false);
     }
@@ -147,17 +172,30 @@ export const CenterLandingPage: React.FC = () => {
     }
   };
 
-  const getExamStatus = (examType: string): 'none' | 'pending' | 'approved' | 'in_progress' | 'submitted' => {
-    // Check if there's an active attempt
-    const attempt = userAttempts.find(a => a.exam_type === examType && a.status !== 'expired');
+  const getExamStatus = (examType: string): 'none' | 'pending' | 'ready' | 'in_progress' | 'submitted' | 'rejected' => {
+    // Check if there's an active attempt (ready, in_progress, or submitted)
+    const attempt = userAttempts.find(a => a.exam_type === examType && ['ready', 'in_progress', 'submitted'].includes(a.status));
     if (attempt) {
-      return attempt.status as any;
+      return attempt.status as 'ready' | 'in_progress' | 'submitted';
     }
     
-    // Check if there's a pending or approved request
-    const request = userRequests.find(r => r.exam_type === examType && r.status !== 'rejected');
-    if (request) {
-      return request.status === 'approved' ? 'approved' : 'pending';
+    // Check if there's a pending request
+    const pendingRequest = userRequests.find(r => r.exam_type === examType && r.status === 'pending');
+    if (pendingRequest) {
+      return 'pending';
+    }
+    
+    // Check if there's an approved request (but no attempt yet - should show ready)
+    const approvedRequest = userRequests.find(r => r.exam_type === examType && r.status === 'approved');
+    if (approvedRequest) {
+      // If approved but no attempt, it means attempt is ready
+      return 'ready';
+    }
+    
+    // Check if there's a rejected request (user can request again)
+    const rejectedRequest = userRequests.find(r => r.exam_type === examType && r.status === 'rejected');
+    if (rejectedRequest) {
+      return 'rejected';
     }
     
     return 'none';
@@ -311,12 +349,29 @@ export const CenterLandingPage: React.FC = () => {
           <>
             {/* Available Exams */}
             <div className="bg-white/80 dark:bg-gray-800/40 backdrop-blur-2xl border border-gray-200 dark:border-white/10 rounded-3xl shadow-xl p-8 mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                Available Exams
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Available Exams
+                </h2>
+                <Button
+                  size="sm"
+                  color="gray"
+                  onClick={async () => {
+                    await loadCenterData();
+                    await loadUserData();
+                  }}
+                >
+                  Refresh
+                </Button>
+              </div>
               
               {exams.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No exams available at this time</p>
+                <div className="text-center py-8">
+                  <p className="text-gray-500 dark:text-gray-400 mb-2">No exams available at this time</p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                    Contact the center administrator to add exams.
+                  </p>
+                </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-4">
                   {exams.map((exam) => {
@@ -332,14 +387,14 @@ export const CenterLandingPage: React.FC = () => {
                           {exam.description || `${exam.examType} Exam`}
                         </p>
                         
-                        {status === 'none' && (
+                        {(status === 'none' || status === 'rejected') && (
                           <Button
                             color="indigo"
                             onClick={() => handleRegisterForExam(exam.examType, exam.id)}
                             disabled={loading}
                             className="w-full"
                           >
-                            Register
+                            {status === 'rejected' ? 'Request Again' : 'Request'}
                           </Button>
                         )}
                         
@@ -351,10 +406,35 @@ export const CenterLandingPage: React.FC = () => {
                           </div>
                         )}
                         
-                        {status === 'ready' && attempt && (
+                        {status === 'ready' && (
                           <Button
                             color="green"
-                            onClick={() => handleStartExam(attempt.id)}
+                            onClick={async () => {
+                              // Find the attempt for this exam
+                              let readyAttempt = userAttempts.find(
+                                a => a.exam_type === exam.examType && a.status === 'ready'
+                              );
+                              
+                              // If no ready attempt found, try to get it from the service
+                              if (!readyAttempt && center) {
+                                try {
+                                  const activeAttempt = await examAttemptService.getActiveAttempt(center.id, exam.examType);
+                                  if (activeAttempt) {
+                                    readyAttempt = activeAttempt;
+                                    // Reload user data to update state
+                                    await loadUserData();
+                                  }
+                                } catch (err) {
+                                  console.error('Error fetching active attempt:', err);
+                                }
+                              }
+                              
+                              if (readyAttempt) {
+                                handleStartExam(readyAttempt.id);
+                              } else {
+                                showError('Exam attempt not found. Please try refreshing the page.');
+                              }
+                            }}
                             className="w-full"
                           >
                             START TEST

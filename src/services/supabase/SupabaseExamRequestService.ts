@@ -8,10 +8,21 @@ export class SupabaseExamRequestService implements ExamRequestService {
     exam_type: string;
     test_id?: string;
   }): Promise<ExamRequest> {
+    // Get center slug from center_id
+    const { data: center, error: centerError } = await supabase
+      .from('centers')
+      .select('slug')
+      .eq('id', data.center_id)
+      .single();
+
+    if (centerError || !center) {
+      throw new Error('Center not found');
+    }
+
     // Call create-exam-request Edge Function
     const { data: result, error } = await supabase.functions.invoke('create-exam-request', {
       body: {
-        center_slug: data.center_id, // Assuming center_id is actually slug
+        center_slug: center.slug,
         exam_type: data.exam_type,
         test_id: data.test_id,
       },

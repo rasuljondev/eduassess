@@ -16,5 +16,11 @@ export interface GlobalUserService {
   
   // Get user by auth_user_id
   getUserByAuthId(authUserId: string): Promise<GlobalUser | null>;
+  
+  // Admin: List all users (for superadmin)
+  listAllUsers(limit?: number, offset?: number): Promise<{ users: GlobalUser[]; total: number }>;
+  
+  // Admin: Delete user (cascades to related data)
+  deleteUser(userId: string): Promise<void>;
 }
 

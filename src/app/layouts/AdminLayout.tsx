@@ -204,6 +204,21 @@ export const AdminLayout: React.FC = () => {
               >
                 <Building2 className={`${isSidebarOpen ? 'w-5 h-5' : 'w-3 h-3'}`} />
               </Link>
+
+              {/* Student Management */}
+              <Link
+                to="/super/students"
+                className={`flex items-center justify-center mb-2 rounded-xl transition-all duration-200 ${
+                  isSidebarOpen ? 'p-4 mx-2' : 'p-2 mx-0'
+                } ${
+                  isActive('/super/students')
+                    ? 'bg-indigo-600 text-white shadow-lg'
+                    : 'hover:bg-slate-700/50 text-indigo-400'
+                }`}
+                title="Student Management"
+              >
+                <Users className={`${isSidebarOpen ? 'w-5 h-5' : 'w-3 h-3'}`} />
+              </Link>
             </>
           )}
 
