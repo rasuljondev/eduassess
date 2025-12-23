@@ -153,21 +153,21 @@ export const ExamShell: React.FC = () => {
       // Load questions
       if (attemptData.test_id) {
         try {
-          const fetchedQuestions = await questionService.getQuestions(attemptData.test_id);
-          
-          if (fetchedQuestions.length === 0) {
+        const fetchedQuestions = await questionService.getQuestions(attemptData.test_id);
+        
+        if (fetchedQuestions.length === 0) {
             console.warn('[ExamShell] No questions found for test_id:', attemptData.test_id);
-            showError('This test has no questions yet. Please contact your administrator.');
+          showError('This test has no questions yet. Please contact your administrator.');
             setQuestions([]);
           } else {
-            setQuestions(fetchedQuestions);
-            
-            // Initialize answers object
-            const initialAnswers: Record<string, string> = {};
-            fetchedQuestions.forEach(q => {
-              initialAnswers[q.id] = '';
-            });
-            setAnswers(initialAnswers);
+        setQuestions(fetchedQuestions);
+        
+        // Initialize answers object
+        const initialAnswers: Record<string, string> = {};
+        fetchedQuestions.forEach(q => {
+          initialAnswers[q.id] = '';
+        });
+        setAnswers(initialAnswers);
           }
         } catch (err: any) {
           console.error('[ExamShell] Error loading questions:', err);
@@ -328,8 +328,8 @@ export const ExamShell: React.FC = () => {
               </div>
             </div>
           ) : null}
+          </div>
         </div>
-      </div>
     </div>
   );
 };

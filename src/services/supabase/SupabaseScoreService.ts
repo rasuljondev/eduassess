@@ -126,7 +126,7 @@ export class SupabaseScoreService implements ScoreService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
-    // Get submission to find the exam attempt
+    // 1. Get submission to find the exam attempt and associated data
     const { data: submission, error: subErr } = await supabase
       .from('submissions')
       .select('id, exam, center_id')
@@ -137,35 +137,40 @@ export class SupabaseScoreService implements ScoreService {
       throw new Error(subErr?.message || 'Submission not found');
     }
 
-    // Find the exam attempt linked to this submission FIRST (before deleting anything)
+    // 2. Find the exam attempt linked to this submission
     const { data: attempt, error: attemptErr } = await supabase
       .from('exam_attempts')
       .select('id, exam_request_id, user_id, center_id, exam_type, test_id')
       .eq('submission_id', submissionId)
       .maybeSingle();
 
-    // Delete the score first
-    const { error: deleteError } = await supabase
+    // 3. Delete the score record first
+    const { error: deleteScoreError } = await supabase
       .from('scores')
       .delete()
       .eq('submission_id', submissionId);
 
-    if (deleteError) {
-      throw new Error(deleteError.message || 'Failed to delete score');
+    if (deleteScoreError) {
+      throw new Error(deleteScoreError.message || 'Failed to delete score');
     }
 
-    // If we have an attempt, clear submission_id first (before deleting submission)
-    if (!attemptErr && attempt) {
-      await supabase
+    // 4. If we have an attempt, clear its submission_id reference
+    // This MUST be done before deleting the submission due to FK constraints
+    if (attempt) {
+      const { error: updateAttemptError } = await supabase
         .from('exam_attempts')
         .update({
           submission_id: null,
-          status: 'ready', // Reset to ready so user can start again
+          status: 'ready', // Temporary status
         })
         .eq('id', attempt.id);
+
+      if (updateAttemptError) {
+        console.error('Failed to clear attempt submission reference:', updateAttemptError);
+      }
     }
 
-    // Delete the submission (this will allow user to submit again)
+    // 5. Delete the submission record
     const { error: deleteSubError } = await supabase
       .from('submissions')
       .delete()
@@ -175,16 +180,33 @@ export class SupabaseScoreService implements ScoreService {
       throw new Error(deleteSubError.message || 'Failed to delete submission');
     }
 
-    // Reset the exam request to 'approved' so user can create a new attempt if needed
-    if (!attemptErr && attempt && attempt.exam_request_id) {
-      await supabase
-        .from('exam_requests')
-        .update({
-          status: 'approved',
-          reviewed_at: null,
-          reviewed_by: null,
-        })
-        .eq('id', attempt.exam_request_id);
+    // 6. If we have an attempt, delete it and reset the original request
+    if (attempt) {
+      // Delete the attempt
+      const { error: deleteAttemptError } = await supabase
+        .from('exam_attempts')
+        .delete()
+        .eq('id', attempt.id);
+
+      if (deleteAttemptError) {
+        console.error('Failed to delete attempt:', deleteAttemptError);
+      }
+
+      // Reset the exam request so the student can request/start again
+      if (attempt.exam_request_id) {
+        const { error: updateRequestError } = await supabase
+          .from('exam_requests')
+          .update({
+            status: 'approved', // Reset to approved so they can start a fresh attempt
+            reviewed_at: null,
+            reviewed_by: null,
+          })
+          .eq('id', attempt.exam_request_id);
+
+        if (updateRequestError) {
+          console.error('Failed to reset exam request:', updateRequestError);
+        }
+      }
     }
   }
 

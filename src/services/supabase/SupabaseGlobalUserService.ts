@@ -66,17 +66,6 @@ export class SupabaseGlobalUserService implements GlobalUserService {
       return [];
     }
 
-    // Debug: Log the data to see what we're getting
-    if (data && data.length > 0) {
-      console.log('Exam history data:', data.map(item => ({
-        attempt_id: item.attempt_id,
-        status: item.status,
-        final_score: item.final_score,
-        is_published: item.is_published,
-        submission_id: item.submission_id
-      })));
-    }
-
     return data || [];
   }
 
