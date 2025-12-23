@@ -22,16 +22,17 @@ export const AdminLoginPage: React.FC = () => {
   const { login: authLogin, user } = useAuthStore();
   const { showError, showSuccess } = useAlert();
 
-  // Redirect if already logged in
+  // Redirect if already logged in (only admins/superadmins, not students)
   useEffect(() => {
     if (user) {
       if (user.role === 'CENTER_ADMIN') {
         navigate('/admin');
       } else if (user.role === 'SUPER_ADMIN') {
         navigate('/super');
-      } else if (user.role === 'STUDENT') {
-        navigate('/student');
       }
+      // Don't redirect students - they should use Student Portal button instead
+      // If student is logged in and tries to access /login, they'll see the login form
+      // but it won't work for them (they need to use /student)
     }
   }, [user, navigate]);
 
@@ -59,13 +60,18 @@ export const AdminLoginPage: React.FC = () => {
       
       const currentUser = useAuthStore.getState().user;
       
-      // Determine where to redirect based on role
-      if (currentUser?.role === 'STUDENT') {
-        navigate('/student');
-      } else if (currentUser?.role === 'CENTER_ADMIN') {
+      // Determine where to redirect based on role (only admins, not students)
+      if (currentUser?.role === 'CENTER_ADMIN') {
         navigate('/admin');
       } else if (currentUser?.role === 'SUPER_ADMIN') {
         navigate('/super');
+      } else if (currentUser?.role === 'STUDENT') {
+        // Students should use Student Portal, not this login page
+        showError('Students should use the Student Portal to login. Please use the Student Portal button.');
+        const { logout } = useAuthStore.getState();
+        logout(); // Log them out since they shouldn't be here
+        setEmail('');
+        setPassword('');
       }
     } catch (err: any) {
       showError(err.message || 'Login failed');
@@ -73,6 +79,44 @@ export const AdminLoginPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // If student is logged in, show message instead of login form
+  if (user?.role === 'STUDENT') {
+    return (
+      <BackgroundMeteorsDots className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-indigo-900/20 dark:to-purple-900/20 transition-colors duration-300">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200 dark:border-gray-700 rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+          <Shield className="w-16 h-16 text-indigo-600 dark:text-indigo-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Student Account Detected
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            You are logged in as a student. This login page is for administrators only.
+          </p>
+          <div className="space-y-3">
+            <Button
+              color="indigo"
+              fullWidth
+              onClick={() => navigate('/student')}
+              leftIcon={<Users className="w-5 h-5" />}
+            >
+              Go to Student Portal
+            </Button>
+            <Button
+              color="gray"
+              fullWidth
+              onClick={async () => {
+                const { logout } = useAuthStore.getState();
+                logout();
+                navigate('/');
+              }}
+            >
+              Logout
+            </Button>
+          </div>
+        </div>
+      </BackgroundMeteorsDots>
+    );
+  }
 
   return (
     <BackgroundMeteorsDots className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-indigo-900/20 dark:to-purple-900/20 transition-colors duration-300">

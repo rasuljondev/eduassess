@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { SupabaseGlobalUserService } from '../../services/supabase/SupabaseGlobalUserService';
 import { Button } from '../../shared/ui/Button';
+import { LogOut } from 'lucide-react';
 
 const globalUserService = new SupabaseGlobalUserService();
 
@@ -100,6 +101,22 @@ export const StudentPortal: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
         <div className="max-w-6xl mx-auto">
+          {/* Logout Button */}
+          <div className="flex justify-end mb-4">
+            <Button
+              color="gray"
+              size="sm"
+              onClick={() => {
+                const { logout } = useAuthStore.getState();
+                logout();
+                navigate('/');
+              }}
+              leftIcon={<LogOut className="w-4 h-4" />}
+            >
+              Logout
+            </Button>
+          </div>
+          
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
               Welcome, {globalUser?.name || user.fullName}!
