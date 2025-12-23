@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { SupabaseGlobalUserService } from '../../services/supabase/SupabaseGlobalUserService';
 import { Button } from '../../shared/ui/Button';
-import { LogOut } from 'lucide-react';
+import { LogOut, RefreshCw } from 'lucide-react';
 
 const globalUserService = new SupabaseGlobalUserService();
 
 export const StudentPortal: React.FC = () => {
   const { user, login: authLogin } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
@@ -38,6 +39,25 @@ export const StudentPortal: React.FC = () => {
       navigate('/super');
     }
   }, [user, navigate]);
+
+  // Refresh data when page regains focus or when location changes (user navigates back)
+  useEffect(() => {
+    if (user?.role === 'STUDENT') {
+      const handleFocus = () => {
+        loadDashboardData();
+      };
+      
+      window.addEventListener('focus', handleFocus);
+      return () => window.removeEventListener('focus', handleFocus);
+    }
+  }, [user]);
+
+  // Refresh when navigating to this page
+  useEffect(() => {
+    if (user?.role === 'STUDENT' && location.pathname === '/student') {
+      loadDashboardData();
+    }
+  }, [location.pathname, user]);
 
   const loadDashboardData = async () => {
     try {
@@ -101,8 +121,17 @@ export const StudentPortal: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
         <div className="max-w-6xl mx-auto">
-          {/* Logout Button */}
-          <div className="flex justify-end mb-4">
+          {/* Action Buttons */}
+          <div className="flex justify-end gap-2 mb-4">
+            <Button
+              color="indigo"
+              size="sm"
+              variant="outline"
+              onClick={loadDashboardData}
+              leftIcon={<RefreshCw className="w-4 h-4" />}
+            >
+              Refresh
+            </Button>
             <Button
               color="gray"
               size="sm"
@@ -198,7 +227,7 @@ export const StudentPortal: React.FC = () => {
                   </thead>
                   <tbody>
                     {examHistory.map((attempt: any) => (
-                      <tr key={attempt.id} className="border-b border-gray-100 dark:border-gray-800">
+                      <tr key={attempt.attempt_id || attempt.id} className="border-b border-gray-100 dark:border-gray-800">
                         <td className="py-3 px-4 text-gray-800 dark:text-gray-200">
                           {attempt.center_name || 'N/A'}
                         </td>
