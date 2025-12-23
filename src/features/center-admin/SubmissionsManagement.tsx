@@ -5,7 +5,7 @@ import { useAlert } from '../../shared/ui/AlertProvider';
 import { Button } from '../../shared/ui/Button';
 import { submissionService, testService, scoreService } from '../../services';
 import type { SubmissionWithDetails, Test, Score } from '../../types';
-import { FileText, CheckCircle, Clock, X, Eye, Phone, User, Calendar, Star, Save } from 'lucide-react';
+import { FileText, CheckCircle, Clock, X, Eye, Phone, User, Calendar, Star, Save, Trash2 } from 'lucide-react';
 
 export const SubmissionsManagement: React.FC = () => {
   const { user } = useAuthStore();
@@ -26,6 +26,7 @@ export const SubmissionsManagement: React.FC = () => {
   const [existingScore, setExistingScore] = useState<Score | null>(null);
   const [loading, setLoading] = useState(false);
   const [savingScore, setSavingScore] = useState(false);
+  const [deletingScore, setDeletingScore] = useState<string | null>(null);
 
   useEffect(() => {
     if (user?.centerSlug) {
@@ -124,6 +125,22 @@ export const SubmissionsManagement: React.FC = () => {
       showError(err.message || 'Failed to save score');
     } finally {
       setSavingScore(false);
+    }
+  };
+
+  const handleDeleteScore = async (submissionId: string) => {
+    const confirmed = window.confirm('Are you sure you want to delete this score? This will allow the student to retake the exam.');
+    if (!confirmed) return;
+
+    setDeletingScore(submissionId);
+    try {
+      await scoreService.deleteScore(submissionId);
+      showSuccess('Score deleted successfully! Student can now retake the exam.');
+      await loadData();
+    } catch (err: any) {
+      showError(err.message || 'Failed to delete score');
+    } finally {
+      setDeletingScore(null);
     }
   };
 
@@ -270,6 +287,18 @@ export const SubmissionsManagement: React.FC = () => {
                         >
                           {submission.isGraded ? 'Edit Score' : 'Score'}
                         </Button>
+                        {submission.isGraded && (
+                          <Button
+                            size="sm"
+                            color="red"
+                            variant="outline"
+                            onClick={() => handleDeleteScore(submission.id)}
+                            disabled={deletingScore === submission.id}
+                            leftIcon={<Trash2 className="w-4 h-4" />}
+                          >
+                            {deletingScore === submission.id ? 'Deleting...' : 'Delete Score'}
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

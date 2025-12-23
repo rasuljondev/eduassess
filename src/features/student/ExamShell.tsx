@@ -85,8 +85,14 @@ export const ExamShell: React.FC = () => {
     }
   }, [attemptId]);
 
-  // Timer to check expiration
+  // Timer to check expiration - stop if submitted
   useEffect(() => {
+    // Stop timer if already submitted
+    if (submitted || attempt?.status === 'submitted') {
+      setTimeRemaining(null);
+      return;
+    }
+    
     if (!attempt?.expires_at) return;
     
     const updateTimer = () => {
@@ -107,7 +113,7 @@ export const ExamShell: React.FC = () => {
     const interval = setInterval(updateTimer, 1000);
     
     return () => clearInterval(interval);
-  }, [attempt]);
+  }, [attempt, submitted]);
 
   const loadExamAttempt = async () => {
     if (!attemptId) return;
@@ -205,7 +211,13 @@ export const ExamShell: React.FC = () => {
     try {
       await examAttemptService.submitAttempt(attemptId, answers);
       
+      // Update local state immediately
       setSubmitted(true);
+      setTimeRemaining(null); // Stop timer
+      if (attempt) {
+        setAttempt({ ...attempt, status: 'submitted' });
+      }
+      
       showSuccess('Test submitted successfully! Your results will be available soon.');
       
       // Redirect to student portal after 3 seconds

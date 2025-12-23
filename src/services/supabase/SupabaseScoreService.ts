@@ -75,7 +75,7 @@ export class SupabaseScoreService implements ScoreService {
       })
       .eq('id', submissionId);
 
-    // If score is published, notify Telegram bot (non-blocking)
+    // If score is published, notify Telegram bot via Edge Function (non-blocking)
     if (scoreData.isPublished) {
       this.notifyTelegramBot(submissionId, result).catch(err => {
         console.error('Failed to notify Telegram bot:', err);
@@ -122,61 +122,92 @@ export class SupabaseScoreService implements ScoreService {
     return this.getScore(submission.id);
   }
 
+  async deleteScore(submissionId: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Get submission to find the exam attempt
+    const { data: submission, error: subErr } = await supabase
+      .from('submissions')
+      .select('id, exam, center_id')
+      .eq('id', submissionId)
+      .single();
+
+    if (subErr || !submission) {
+      throw new Error(subErr?.message || 'Submission not found');
+    }
+
+    // Delete the score
+    const { error: deleteError } = await supabase
+      .from('scores')
+      .delete()
+      .eq('submission_id', submissionId);
+
+    if (deleteError) {
+      throw new Error(deleteError.message || 'Failed to delete score');
+    }
+
+    // Mark submission as not graded
+    await supabase
+      .from('submissions')
+      .update({
+        is_graded: false,
+        graded_at: null,
+        graded_by: null,
+      })
+      .eq('id', submissionId);
+
+    // Find the exam attempt linked to this submission and reset it to allow retaking
+    const { data: attempt, error: attemptErr } = await supabase
+      .from('exam_attempts')
+      .select('id, exam_request_id, user_id, center_id, exam_type, test_id')
+      .eq('submission_id', submissionId)
+      .maybeSingle();
+
+    if (!attemptErr && attempt && attempt.exam_request_id) {
+      // Delete the old attempt
+      await supabase
+        .from('exam_attempts')
+        .delete()
+        .eq('id', attempt.id);
+
+      // Reset the exam request to 'approved' so user can create a new attempt
+      await supabase
+        .from('exam_requests')
+        .update({
+          status: 'approved',
+          reviewed_at: null,
+          reviewed_by: null,
+        })
+        .eq('id', attempt.exam_request_id);
+
+      // Also delete the submission since we're allowing retake
+      await supabase
+        .from('submissions')
+        .delete()
+        .eq('id', submissionId);
+    }
+  }
+
   private async notifyTelegramBot(submissionId: string, scoreData: any): Promise<void> {
     try {
-      // Get submission details to find telegram_id (via global_users)
-      const { data: submission, error: subErr } = await supabase
-        .from('submissions')
-        .select(`
-          user_id,
-          test_id,
-          student_full_name,
-          tests ( name )
-        `)
-        .eq('id', submissionId)
-        .single();
-
-      if (subErr || !submission) {
-        console.error('Failed to get submission for notification:', subErr);
-        return;
-      }
-
-      const { data: gu, error: guErr } = await supabase
-        .from('global_users')
-        .select('telegram_id, login')
-        .eq('id', (submission as any).user_id)
-        .maybeSingle();
-
-      if (guErr || !gu || !gu.telegram_id) {
-        // No telegram linked -> nothing to notify
-        return;
-      }
-
-      const login = gu.login;
-      const telegramId = Number(gu.telegram_id);
-      const testName = (submission as any).tests?.name;
-      const webhookUrl = import.meta.env.VITE_BOT_WEBHOOK_URL || 'http://localhost:3001';
-
-      // Call bot webhook
-      const response = await fetch(`${webhookUrl}/notify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Call Supabase Edge Function to handle notification server-side
+      const { data, error } = await supabase.functions.invoke('notify-score', {
+        body: {
+          submission_id: submissionId,
+          score_data: scoreData,
         },
-        body: JSON.stringify({
-          telegram_id: telegramId,
-          login,
-          student_name: (submission as any).student_full_name,
-          score: scoreData.final_score,
-          testName,
-        }),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Bot webhook failed: ${response.status} - ${errorText}`);
+      if (error) {
+        console.error('Failed to invoke notify-score function:', error);
+        return;
+      }
+
+      if (data?.success) {
+        console.log('Successfully notified Telegram bot:', data.message);
       } else {
-        console.log(`Successfully notified Telegram bot for login: ${login}`);
+        console.warn('Notification result:', data);
       }
     } catch (err) {
       console.error('Error notifying Telegram bot:', err);

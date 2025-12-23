@@ -140,6 +140,7 @@ supabase functions deploy create-exam-request
 supabase functions deploy approve-exam-request
 supabase functions deploy start-exam-attempt
 supabase functions deploy cleanup-expired-attempts
+supabase functions deploy notify-score
 ```
 
 **Alternative: Deploy all functions at once** (if supported):
@@ -495,6 +496,7 @@ Create these functions:
 - `approve-exam-request`
 - `start-exam-attempt`
 - `cleanup-expired-attempts`
+- `notify-score` (notifies students via Telegram when scores are published)
 
 ### 4. Deploy and test
 ```bash
@@ -508,6 +510,7 @@ supabase functions deploy create-exam-request
 supabase functions deploy approve-exam-request
 supabase functions deploy start-exam-attempt
 supabase functions deploy cleanup-expired-attempts
+supabase functions deploy notify-score
 
 # Watch logs
 supabase functions logs --follow
@@ -520,7 +523,10 @@ supabase functions logs register-student
 ```bash
 supabase secrets set TELEGRAM_BOT_TOKEN=your_bot_token
 supabase secrets set FIXED_PASSWORD=exam2024
+supabase secrets set BOT_WEBHOOK_URL=http://your-bot-server:3001
 ```
+
+**Note**: `BOT_WEBHOOK_URL` is required for the `notify-score` function to send Telegram notifications when scores are published.
 
 ### 6. Verify deployment
 Check dashboard: https://supabase.com/dashboard/project/exnfvzzoxprgrzgkylnl

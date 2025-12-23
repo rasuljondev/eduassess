@@ -10,5 +10,6 @@ export interface ScoreService {
   saveScore(submissionId: string, scoreData: ScoreData): Promise<Score>;
   getScore(submissionId: string): Promise<Score | null>;
   getScoreByLogin(login: string): Promise<Score | null>;
+  deleteScore(submissionId: string): Promise<void>;
 }
 

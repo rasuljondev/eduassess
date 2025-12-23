@@ -218,11 +218,18 @@ export const StudentPortal: React.FC = () => {
                             {attempt.status}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-gray-600 dark:text-gray-400">
-                          {attempt.is_published && attempt.final_score ? 
-                            JSON.stringify(attempt.final_score) : 
-                            attempt.status === 'submitted' ? 'Pending' : '-'
-                          }
+                        <td className="py-3 px-4">
+                          {attempt.is_published && attempt.final_score ? (
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-full text-sm font-semibold">
+                              {typeof attempt.final_score === 'object' 
+                                ? (attempt.final_score.overall || attempt.final_score.score || Object.values(attempt.final_score)[0])
+                                : attempt.final_score}
+                            </span>
+                          ) : attempt.status === 'submitted' ? (
+                            <span className="text-gray-500 dark:text-gray-400">Pending</span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500">-</span>
+                          )}
                         </td>
                       </tr>
                     ))}
