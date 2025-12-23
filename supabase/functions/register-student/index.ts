@@ -17,8 +17,44 @@ interface RegisterRequest {
   telegram_username?: string;
 }
 
-function randomCode(len = 5): string {
-  return Math.random().toString(36).substring(2, 2 + len);
+// Generate login from name + phone_number (e.g., "rasuljon2200880")
+function generateLogin(name: string, phone_number: string): string {
+  // Remove spaces and special characters from name and phone
+  const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const cleanPhone = phone_number.replace(/[^0-9]/g, '');
+  
+  // Combine: name + phone
+  return `${cleanName}${cleanPhone}`;
+}
+
+// Check if login already exists and generate unique one if needed
+async function ensureUniqueLogin(
+  supabaseAdmin: any,
+  baseLogin: string
+): Promise<string> {
+  let login = baseLogin;
+  let counter = 0;
+  const maxAttempts = 100;
+
+  while (counter < maxAttempts) {
+    const { data: existing } = await supabaseAdmin
+      .from('global_users')
+      .select('login')
+      .eq('login', login)
+      .maybeSingle();
+
+    if (!existing) {
+      return login; // Login is unique
+    }
+
+    // Login exists, try with counter suffix
+    counter++;
+    login = `${baseLogin}${counter}`;
+  }
+
+  // Fallback: add random suffix if all attempts failed
+  const randomSuffix = Math.random().toString(36).substring(2, 7);
+  return `${baseLogin}_${randomSuffix}`;
 }
 
 serve(async (req) => {
@@ -123,7 +159,8 @@ serve(async (req) => {
     }
 
     // Case 4: New user - create account
-    const login = `student_${randomCode(5)}`;
+    const baseLogin = generateLogin(name, phone_number);
+    const login = await ensureUniqueLogin(supabaseAdmin, baseLogin);
     const email = `${login}@temp.exam.uz`;
 
     // Create auth user

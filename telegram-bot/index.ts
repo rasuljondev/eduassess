@@ -43,9 +43,9 @@ const WELCOME_MESSAGE = `👋 Welcome to EduAssess! 🎓
 
 To create your account or link your existing account, please send your information in this format:
 
-Surname Name PhoneNumber
+Surname Name Phone
 
-📝 Example (copy and edit):
+📝 Example:
 Karimov Javohir +998901234567
 
 After registration, you'll receive your login credentials to access exams on our website.
@@ -264,7 +264,7 @@ bot.on('message', async (msg) => {
   if (!userData) {
     await bot.sendMessage(
       chatId,
-      `❌ Invalid format. Please send your information like this:\n\nSurname Name PhoneNumber\n\nExample:\nKarimov Javohir +998901234567`
+      `❌ Invalid format. Please send your information like this:\n\nSurname Name Phone\n\nExample:\nKarimov Javohir +998901234567`
     );
     return;
   }
@@ -300,13 +300,13 @@ bot.on('message', async (msg) => {
       // New account created
       await bot.sendMessage(
         chatId,
-        `✅ Account created successfully!\n\nYour login: ${result.login}\nPassword: ${result.password}\n\n⚠️ Keep this information safe. You'll need it to access exams on our website.\n\n🌐 Visit: eduassess.uz/student\n\nUse /results to view your exam scores.`
+        `✅ Account created successfully!\n\nYour login: ${result.login}\n\n⚠️ Keep this information safe. You'll need it to access exams on our website.\n\n🌐 Visit: eduassess.uz/student`
       );
     } else {
       // Existing account linked
       await bot.sendMessage(
         chatId,
-        `✅ Account found and linked!\n\nYour login: ${result.login}\nPassword: ${result.password}\n\nYou can now view your exam results here in Telegram!\n\nUse /results to see your scores.\n\n🌐 Visit: eduassess.uz/student`
+        `✅ Account found and linked!\n\nYour login: ${result.login}\n\nYou can now view your exam results here in Telegram!\n\nUse /results to see your scores.\n\n🌐 Visit: eduassess.uz/student`
       );
     }
   } catch (err) {

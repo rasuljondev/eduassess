@@ -320,6 +320,19 @@ export const LandingPage: React.FC = () => {
 
               <Button
               size={scrolled ? "sm" : "md"}
+              color="indigo"
+              onClick={() => navigate('/student')}
+              leftIcon={<Users className="w-4 h-4" />}
+              customClassName={`transition-all duration-300 ${
+                scrolled 
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 px-2.5 py-1.5' 
+                  : 'bg-indigo-600/80 text-white hover:bg-indigo-700 focus:ring-indigo-500'
+              }`}
+            >
+              Student Portal
+            </Button>
+              <Button
+              size={scrolled ? "sm" : "md"}
               color="blue"
               onClick={() => navigate('/login')}
               leftIcon={<LogIn className="w-4 h-4" />}
