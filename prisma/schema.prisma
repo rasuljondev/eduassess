@@ -1,0 +1,209 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum RoleType {
+  superadmin
+  center_admin
+  student
+
+  @@map("role_type")
+}
+
+enum ExamType {
+  ielts
+  sat
+  aptis
+  multi_level
+
+  @@map("exam_type")
+}
+
+model Center {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug       String   @unique
+  name       String
+  logoPath   String?  @map("logo_path")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  
+  profiles     Profile[]
+  tests        Test[]
+  examRequests ExamRequest[]
+  examAttempts ExamAttempt[]
+  submissions  Submission[]
+  scores       Score[]
+
+  @@map("centers")
+}
+
+model Profile {
+  userId     String   @id @map("user_id") @db.Uuid
+  role       RoleType
+  centerId   String?  @map("center_id") @db.Uuid
+  fullName   String?  @map("full_name")
+  telegramId BigInt?  @unique @map("telegram_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  center     Center?  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model GlobalUser {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  login            String   @unique
+  surname          String
+  name             String
+  phoneNumber      String   @map("phone_number")
+  telegramId       BigInt?  @unique @map("telegram_id")
+  telegramUsername String?  @map("telegram_username")
+  authUserId       String?  @unique @map("auth_user_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  examRequests ExamRequest[]
+  examAttempts ExamAttempt[]
+  submissions  Submission[]
+  scores       Score[]
+
+  @@map("global_users")
+}
+
+model Test {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  centerId        String   @map("center_id") @db.Uuid
+  name            String
+  examType        ExamType @map("exam_type")
+  description     String?
+  durationMinutes Int      @default(120) @map("duration_minutes")
+  createdBy       String?  @map("created_by") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  center       Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  questions    Question[]
+  examRequests ExamRequest[]
+  examAttempts ExamAttempt[]
+  submissions  Submission[]
+
+  @@map("tests")
+}
+
+model Question {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  testId         String   @map("test_id") @db.Uuid
+  questionText   String   @map("question_text")
+  expectedAnswer String   @map("expected_answer")
+  orderNum       Int      @default(0) @map("order_num")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  test           Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@map("questions")
+}
+
+model ExamRequest {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  centerId    String   @map("center_id") @db.Uuid
+  examType    ExamType @map("exam_type")
+  testId      String?  @map("test_id") @db.Uuid
+  status      String   @default("pending")
+  requestedAt DateTime @default(now()) @map("requested_at") @db.Timestamptz(6)
+  reviewedAt  DateTime? @map("reviewed_at") @db.Timestamptz(6)
+  reviewedBy  String?  @map("reviewed_by") @db.Uuid
+
+  user         GlobalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  center       Center     @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  test         Test?      @relation(fields: [testId], references: [id], onDelete: SetNull)
+  examAttempts ExamAttempt[]
+
+  @@map("exam_requests")
+}
+
+model ExamAttempt {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  examRequestId String   @map("exam_request_id") @db.Uuid
+  centerId      String   @map("center_id") @db.Uuid
+  examType      ExamType @map("exam_type")
+  testId        String?  @map("test_id") @db.Uuid
+  status        String   @default("ready")
+  startedAt     DateTime? @map("started_at") @db.Timestamptz(6)
+  expiresAt     DateTime? @map("expires_at") @db.Timestamptz(6)
+  submissionId  String?  @unique @map("submission_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user         GlobalUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  examRequest  ExamRequest @relation(fields: [examRequestId], references: [id], onDelete: Cascade)
+  center       Center      @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  test         Test?       @relation(fields: [testId], references: [id], onDelete: SetNull)
+  submission   Submission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+
+  @@map("exam_attempts")
+}
+
+model Submission {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String?  @map("user_id") @db.Uuid
+  generatedStudentId String?  @map("generated_student_id") @db.Uuid
+  centerId           String   @map("center_id") @db.Uuid
+  exam               ExamType
+  testId             String?  @map("test_id") @db.Uuid
+  studentFullName    String   @map("student_full_name")
+  phoneNumber        String?  @map("phone_number")
+  answers            Json
+  studentLogin       String?  @map("student_login")
+  studentExam        ExamType? @map("student_exam")
+  studentTestName    String?  @map("student_test_name")
+  studentCreatedAt   DateTime? @map("student_created_at") @db.Timestamptz(6)
+  isGraded           Boolean  @default(false) @map("is_graded")
+  gradedAt           DateTime? @map("graded_at") @db.Timestamptz(6)
+  gradedBy           String?  @map("graded_by") @db.Uuid
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user         GlobalUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  center       Center      @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  test         Test?       @relation(fields: [testId], references: [id])
+  examAttempt  ExamAttempt?
+  score        Score?
+
+  @@map("submissions")
+}
+
+model Score {
+  submissionId String   @id @map("submission_id") @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  centerId     String   @map("center_id") @db.Uuid
+  exam         ExamType
+  autoScore    Json?    @map("auto_score")
+  manualScore  Json?    @map("manual_score")
+  finalScore   Json?    @map("final_score")
+  isPublished  Boolean  @default(false) @map("is_published")
+  publishedAt  DateTime? @map("published_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  user         GlobalUser? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  center       Center      @relation(fields: [centerId], references: [id], onDelete: Cascade)
+
+  @@map("scores")
+}
+
+model Notification {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipientUserId String   @map("recipient_user_id") @db.Uuid
+  type            String
+  payload         Json
+  isRead          Boolean  @default(false) @map("is_read")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("notifications")
+}
+
