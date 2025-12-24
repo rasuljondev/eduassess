@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/auth.store';
 import { useAlert } from '../../shared/ui/AlertProvider';
 import { Button } from '../../shared/ui/Button';
 import { submissionService, testService, scoreService } from '../../services';
 import type { SubmissionWithDetails, Test, Score } from '../../types';
-import { FileText, CheckCircle, Clock, X, Eye, Phone, User, Calendar, Star, Save, Trash2 } from 'lucide-react';
+import { FileText, CheckCircle, Clock, X, Eye, Phone, User, Calendar, Star, Save, Trash2, Download } from 'lucide-react';
 
 export const SubmissionsManagement: React.FC = () => {
   const { user } = useAuthStore();
-  const navigate = useNavigate();
-  const { showSuccess, showError } = useAlert();
+  const { showSuccess, showError, showWarning, showInfo } = useAlert();
   
   const [submissions, setSubmissions] = useState<SubmissionWithDetails[]>([]);
   const [tests, setTests] = useState<Test[]>([]);
@@ -27,6 +25,7 @@ export const SubmissionsManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [savingScore, setSavingScore] = useState(false);
   const [deletingScore, setDeletingScore] = useState<string | null>(null);
+  const [selectedSubmissions, setSelectedSubmissions] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (user?.centerSlug) {
@@ -151,6 +150,62 @@ export const SubmissionsManagement: React.FC = () => {
     return true;
   });
 
+  const pendingSubmissions = filteredSubmissions.filter(sub => !sub.isGraded);
+
+  const handleToggleSelect = (submissionId: string) => {
+    setSelectedSubmissions(prev => {
+      const next = new Set(prev);
+      if (next.has(submissionId)) {
+        next.delete(submissionId);
+      } else {
+        next.add(submissionId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedSubmissions.size === filteredSubmissions.length) {
+      setSelectedSubmissions(new Set());
+    } else {
+      setSelectedSubmissions(new Set(filteredSubmissions.map(sub => sub.id)));
+    }
+  };
+
+  const handleGradeSelected = async () => {
+    if (selectedSubmissions.size === 0) return;
+    
+    const submissionIds = Array.from(selectedSubmissions);
+    const submissionsToGrade = filteredSubmissions.filter(sub => 
+      submissionIds.includes(sub.id) && !sub.isGraded
+    );
+
+    if (submissionsToGrade.length === 0) {
+      showWarning('No ungraded submissions selected');
+      return;
+    }
+
+    // For now, open score modal for the first selected submission
+    // In the future, this could be enhanced to bulk grade with a default score
+    const firstSubmission = submissionsToGrade[0];
+    setSelectedSubmissions(new Set());
+    handleOpenScoreModal(firstSubmission);
+  };
+
+  const handleGradeAll = async () => {
+    if (pendingSubmissions.length === 0) {
+      showInfo('No pending submissions to grade');
+      return;
+    }
+
+    // Open score modal for the first pending submission
+    handleOpenScoreModal(pendingSubmissions[0]);
+  };
+
+  const handleDownload = () => {
+    showInfo('Coming soon');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -160,6 +215,24 @@ export const SubmissionsManagement: React.FC = () => {
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Review and grade student submissions
           </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleDownload}
+            leftIcon={<Download className="w-4 h-4" />}
+          >
+            Download
+          </Button>
+          {filteredSubmissions.length > 0 && (
+            <Button
+              color="indigo"
+              onClick={selectedSubmissions.size > 0 ? handleGradeSelected : handleGradeAll}
+              disabled={selectedSubmissions.size === 0 && pendingSubmissions.length === 0}
+            >
+              {selectedSubmissions.size > 0 ? `Grade Selected (${selectedSubmissions.size})` : 'Grade All'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -220,6 +293,14 @@ export const SubmissionsManagement: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                  <th className="p-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300 w-12">
+                    <input
+                      type="checkbox"
+                      checked={filteredSubmissions.length > 0 && selectedSubmissions.size === filteredSubmissions.length}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                    />
+                  </th>
                   <th className="p-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Student</th>
                   <th className="p-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Phone</th>
                   <th className="p-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Test</th>
@@ -231,6 +312,14 @@ export const SubmissionsManagement: React.FC = () => {
               <tbody>
                 {filteredSubmissions.map(submission => (
                   <tr key={submission.id} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors">
+                    <td className="p-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedSubmissions.has(submission.id)}
+                        onChange={() => handleToggleSelect(submission.id)}
+                        className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                      />
+                    </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-gray-400" />

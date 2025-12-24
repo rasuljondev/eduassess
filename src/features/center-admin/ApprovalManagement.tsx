@@ -2,16 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/auth.store';
 import { SupabaseExamRequestService } from '../../services/supabase/SupabaseExamRequestService';
 import { Button } from '../../shared/ui/Button';
+import { useAlert } from '../../shared/ui/AlertProvider';
+import { supabase } from '../../lib/supabase';
 import type { ExamRequest } from '../../types';
 
 const examRequestService = new SupabaseExamRequestService();
 
 export const ApprovalManagement: React.FC = () => {
   const { user } = useAuthStore();
+  const { showSuccess, showError } = useAlert();
   const [filter, setFilter] = useState<'pending' | 'all'>('pending');
   const [requests, setRequests] = useState<ExamRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   useEffect(() => {
     loadRequests();
@@ -47,9 +52,10 @@ export const ApprovalManagement: React.FC = () => {
     setProcessing(requestId);
     try {
       await examRequestService.approveRequest(requestId);
+      showSuccess('Request approved successfully');
       await loadRequests();
     } catch (err: any) {
-      alert(err.message || 'Failed to approve request');
+      showError(err.message || 'Failed to approve request');
     } finally {
       setProcessing(null);
     }
@@ -59,15 +65,108 @@ export const ApprovalManagement: React.FC = () => {
     setProcessing(requestId);
     try {
       await examRequestService.rejectRequest(requestId);
+      showSuccess('Request rejected');
       await loadRequests();
     } catch (err: any) {
-      alert(err.message || 'Failed to reject request');
+      showError(err.message || 'Failed to reject request');
     } finally {
       setProcessing(null);
     }
   };
 
+  const handleToggleSelect = (requestId: string) => {
+    setSelectedRequests(prev => {
+      const next = new Set(prev);
+      if (next.has(requestId)) {
+        next.delete(requestId);
+      } else {
+        next.add(requestId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const pendingRequests = requests.filter(r => r.status === 'pending');
+    if (selectedRequests.size === pendingRequests.length) {
+      setSelectedRequests(new Set());
+    } else {
+      setSelectedRequests(new Set(pendingRequests.map(r => r.id)));
+    }
+  };
+
+  const handleApproveSelected = async () => {
+    if (selectedRequests.size === 0) return;
+    
+    setBulkProcessing(true);
+    const requestIds = Array.from(selectedRequests);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const requestId of requestIds) {
+        try {
+          await examRequestService.approveRequest(requestId);
+          successCount++;
+        } catch (err: any) {
+          console.error(`Failed to approve ${requestId}:`, err);
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        showSuccess(`Successfully approved ${successCount} request${successCount > 1 ? 's' : ''}`);
+      }
+      if (failCount > 0) {
+        showError(`Failed to approve ${failCount} request${failCount > 1 ? 's' : ''}`);
+      }
+
+      setSelectedRequests(new Set());
+      await loadRequests();
+    } catch (err: any) {
+      showError(err.message || 'Failed to approve requests');
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
+  const handleApproveAll = async () => {
+    const pendingRequests = requests.filter(r => r.status === 'pending');
+    if (pendingRequests.length === 0) return;
+
+    setBulkProcessing(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    try {
+      for (const request of pendingRequests) {
+        try {
+          await examRequestService.approveRequest(request.id);
+          successCount++;
+        } catch (err: any) {
+          console.error(`Failed to approve ${request.id}:`, err);
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        showSuccess(`Successfully approved ${successCount} request${successCount > 1 ? 's' : ''}`);
+      }
+      if (failCount > 0) {
+        showError(`Failed to approve ${failCount} request${failCount > 1 ? 's' : ''}`);
+      }
+
+      setSelectedRequests(new Set());
+      await loadRequests();
+    } catch (err: any) {
+      showError(err.message || 'Failed to approve requests');
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
+
   const pendingCount = requests.filter(r => r.status === 'pending').length;
+  const pendingRequests = requests.filter(r => r.status === 'pending');
 
   return (
     <div className="p-6">
@@ -75,20 +174,33 @@ export const ApprovalManagement: React.FC = () => {
         Exam Requests
       </h1>
 
-      {/* Filters */}
-      <div className="flex gap-4 mb-6">
-        <Button
-          color={filter === 'pending' ? 'indigo' : 'gray'}
-          onClick={() => setFilter('pending')}
-        >
-          Pending {pendingCount > 0 && `(${pendingCount})`}
-        </Button>
-        <Button
-          color={filter === 'all' ? 'indigo' : 'gray'}
-          onClick={() => setFilter('all')}
-        >
-          All Requests
-        </Button>
+      {/* Filters and Actions */}
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div className="flex gap-4">
+          <Button
+            color={filter === 'pending' ? 'indigo' : 'gray'}
+            onClick={() => setFilter('pending')}
+          >
+            Pending {pendingCount > 0 && `(${pendingCount})`}
+          </Button>
+          <Button
+            color={filter === 'all' ? 'indigo' : 'gray'}
+            onClick={() => setFilter('all')}
+          >
+            All Requests
+          </Button>
+        </div>
+        {filter === 'pending' && pendingCount > 0 && (
+          <div className="flex gap-2">
+            <Button
+              color="green"
+              onClick={selectedRequests.size > 0 ? handleApproveSelected : handleApproveAll}
+              disabled={bulkProcessing}
+            >
+              {selectedRequests.size > 0 ? `Approve Selected (${selectedRequests.size})` : 'Approve All'}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Requests Table */}
@@ -105,6 +217,16 @@ export const ApprovalManagement: React.FC = () => {
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
+                {filter === 'pending' && (
+                  <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300 w-12">
+                    <input
+                      type="checkbox"
+                      checked={pendingRequests.length > 0 && selectedRequests.size === pendingRequests.length}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                    />
+                  </th>
+                )}
                 <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300">Student</th>
                 <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300">Login</th>
                 <th className="text-left py-3 px-4 text-gray-700 dark:text-gray-300">Exam Type</th>
@@ -117,6 +239,18 @@ export const ApprovalManagement: React.FC = () => {
             <tbody>
               {requests.map((req) => (
                 <tr key={req.id} className="border-t border-gray-200 dark:border-gray-700">
+                  {filter === 'pending' && (
+                    <td className="py-3 px-4">
+                      {req.status === 'pending' && (
+                        <input
+                          type="checkbox"
+                          checked={selectedRequests.has(req.id)}
+                          onChange={() => handleToggleSelect(req.id)}
+                          className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        />
+                      )}
+                    </td>
+                  )}
                   <td className="py-3 px-4 text-gray-800 dark:text-gray-200">
                     {req.user?.surname && req.user?.name 
                       ? `${req.user.surname} ${req.user.name}`
@@ -178,7 +312,4 @@ export const ApprovalManagement: React.FC = () => {
     </div>
   );
 };
-
-// Import supabase for center lookup
-import { supabase } from '../../lib/supabase';
 
